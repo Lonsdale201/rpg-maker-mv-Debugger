@@ -41,7 +41,7 @@ In the second group you can add player (leader) info e.g.: (these are also updat
 * Money gain / remove
 * Teleport from / to
 * Waiting 
-* Common event (manually)
+* Common event (Still in development) (just need to show, if the event action come from normal, or common event)
 * Erase event
 * Party changed (add / remove)
 * Battle LOG (win/ lose / escaped / defated mobs / battle time)
