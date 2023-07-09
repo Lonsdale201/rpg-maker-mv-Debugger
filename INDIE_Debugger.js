@@ -6,10 +6,16 @@
 * @plugindesc Debugger plugin
 * @author Soczó Kristóf
 * @help
-* Fasza debugger rendszer
-* Script commands: this.logCommonEvent(n) change the n with your common event id. At the MOMENT NOT RECOMMENDED TO USE STILL IN DEVELOPMENT
-* this.logEvent(this._eventId); will print the event name and if you are using the this.finishEvent(this._eventId); you can make a better hierarchy
-* this.createEventLabel(1, "Hello World", "red");
+* /=====================================================================/
+* Useful tool for debug your project visually when running the game
+* /=====================================================================/
+* 
+* Script commands:
+*
+* this.logCommonEvent(n) change the n with your common event id. At the MOMENT NOT RECOMMENDED TO USE STILL IN DEVELOPMENT
+* this.logEvent(this._eventId); will print the event name  // Use this if you need a better Hierarchical display
+* this.finishEvent(this._eventId); will print if the event finished   // Use this if you need a better Hierarchical display
+* this.createEventLabel(1, "Hello World", "red"); // make a tag for your events ( only display when running the game)
 * 
 * Track list:   Switcher state
 *               Self Switch State
@@ -25,8 +31,27 @@
 *               Battle LOG (win/ lose / escaped / defated mobs / battle time)
 *               Quest Jorunay (Yanfly)
 *
-* Quest Journay supported logs: Plugin commands only: Only support Quest (and not objectives) - Completed, Added (all of types : single, multiple, or ranges)
+* Quest Journay supported logs: Plugin commands only: Only support Quest
+* (and not objectives)
+* - Completed, Added (all of types : single, multiple, or ranges)
 * Note that this monitors the running of the plugin command.
+*
+* Changelog
+* /=====================================================================/
+*
+* 0.15 
+* Refactored the Switcher log system (now better handling / 
+* performance and bypass the autorun and paralell spam)
+* Refactored the Self Switcher log system (now better handling 
+* / performance and bypass the autorun and paralell spam) + Can log if disabled
+* New Conditinal Branch Logs (send a log if conditions not meet and false)
+* New Movement Route Logs.
+*
+* /=====================================================================/
+*
+* 0.1 - Initial release
+*
+* /=====================================================================/
 *
 * @param Windows
 *
@@ -122,6 +147,13 @@
 * @type boolean
 * @default true
 * @desc enable or disable the self switch logs
+*
+* @param EnableMoveMentLog
+* @text Enable MoveMent Log
+* @parent Logs
+* @type boolean
+* @default true
+* @desc enable or disable the Movement log (only for events)
 *
 * @param Modal Window Group #1
 *
@@ -233,6 +265,7 @@ INDIE.Debugger = INDIE.Debugger || {};
     var enableParalellRunningLog = JSON.parse(parameters['EnableParalellRunningLog'] || 'false');
     var EnableVarTracker = JSON.parse(parameters['EnableVarTracker'] || 'true');
     var EnableSelfSwitch = JSON.parse(parameters['EnableSelfSwitch'] || 'true');
+    var EnableMoveMentLog = JSON.parse(parameters['EnableMoveMentLog'] || 'true');
 
     var StarterVariable = Number(parameters['StarterVariable'] || '2');
 
@@ -737,14 +770,14 @@ Scene_Map.prototype.onMapLoaded = function() {
 };
 
 // ez felelős a folyamatos frissítésért
-var _Game_Party_gainGold = Game_Party.prototype.gainGold;
-Game_Party.prototype.gainGold = function(amount) {
-    _Game_Party_gainGold.call(this, amount);
-    var scene = SceneManager._scene;
-    if (scene instanceof Scene_Map && scene._goldWindow) {
-        scene._goldWindow.refresh();
-    }
-};
+// var _Game_Party_gainGold = Game_Party.prototype.gainGold;
+// Game_Party.prototype.gainGold = function(amount) {
+//     _Game_Party_gainGold.call(this, amount);
+//     var scene = SceneManager._scene;
+//     if (scene instanceof Scene_Map && scene._goldWindow) {
+//         scene._goldWindow.refresh();
+//     }
+// };
 
 GoldWindow.prototype.update = function() {
     Window_Base.prototype.update.call(this);
@@ -1149,43 +1182,39 @@ Window_DebugLog.prototype.drawTextExWithFontSize = function(text, x, y, maxWidth
     this.processNewLine(this._textState);
 
     var brokenLines = [];
-    // how to death -.-""
     while (this._textState.index < this._textState.text.length) {
         let nextChar = this._textState.text[this._textState.index];
         let nextCharWidth = this.textWidth(nextChar);
         if (this._textState.x + nextCharWidth > maxWidth) {
-            // Find the last space in the text
             var lastSpaceIndex = this._textState.text.lastIndexOf(' ', this._textState.index);
-            // If there is no space in the text, break the line at the current index
             if (lastSpaceIndex === -1) {
                 lastSpaceIndex = this._textState.index;
             } else {
-                // if we break at a space, we need to skip the space in the new line
                 lastSpaceIndex += 1;
             }
-
             var textToPush = this._textState.text.substring(0, lastSpaceIndex);
             var remainingText = this._textState.text.substring(lastSpaceIndex);
-
-            // Additional check
             if (this._textState.text[this._textState.index] !== remainingText[0]) {
                 remainingText = this._textState.text[this._textState.index] + remainingText;
             }
-
             brokenLines.push(textToPush);
             this._textState.text = remainingText;
             this._textState.index = 0;
+            this._textState.x = 0;  // Reset the x position
             this.processNewLine(this._textState);
         } else {
             // If the character fits the line, add it
             this.processNormalCharacter(this._textState);
         }
     }
-    
     brokenLines.push(this._textState.text);
     this._textState = originalTextState;
     return brokenLines;
 };
+
+
+
+
 
 Window_DebugLog.prototype.drawItem = function(index) {
     var rect = this.itemRectForText(index);
@@ -1338,49 +1367,97 @@ Scene_Map.prototype.start = function() {
 };
 
 
-// Check switchers
+// Check switchers // OLD
 
-var _Game_Switches_setValue = Game_Switches.prototype.setValue;
-Game_Switches.prototype.setValue = function(switchId, value) {
-    _Game_Switches_setValue.call(this, switchId, value);
-    var scene = SceneManager._scene;
-    if (scene instanceof Scene_Map && scene._debugLogWindow) {
-        var currentTime = getCurrentTime();
-        var switchName = $dataSystem.switches[switchId];
-        var switchState = value ? "ON" : "OFF";
-        var logText = currentTime + " [SWITCHER] - " + (switchName ? switchName : "Switch " + switchId) + ": " + switchState;
-        scene._debugLogWindow.addLine(logText);
-    }
+// var _Game_Switches_setValue = Game_Switches.prototype.setValue;
+// Game_Switches.prototype.setValue = function(switchId, value) {
+//     _Game_Switches_setValue.call(this, switchId, value);
+//     var scene = SceneManager._scene;
+//     if (scene instanceof Scene_Map && scene._debugLogWindow) {
+//         var currentTime = getCurrentTime();
+//         var switchName = $dataSystem.switches[switchId];
+//         var switchState = value ? "ON" : "OFF";
+//         var logText = currentTime + " [SWITCHER] - " + (switchName ? switchName : "Switch " + switchId) + ": " + switchState;
+//         scene._debugLogWindow.addLine(logText);
+//     }
     
+// };
+
+// Game switch log // NEW
+var _Game_Switches_setValue = Game_Switches.prototype.setValue;
+
+Game_Switches.prototype.setValue = function(switchId, value) {
+    var oldValue = this.value(switchId);  // Get the old value of the switch
+    _Game_Switches_setValue.call(this, switchId, value);
+    
+    if (oldValue !== value) {  // Only log if the switch value has actually changed
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var currentTime = getCurrentTime();
+            var switchName = $dataSystem.switches[switchId];
+            var switchState = value ? "ON" : "OFF";
+            var logText = currentTime + " [SWITCHER] - " + (switchName ? switchName : "Switch " + switchId) + ": " + switchState;
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
 };
 
-// check self switcher
+
+
+
+
+// NEW self switch logs
 // Override Game_SelfSwitches.prototype.setValue
 var _Game_SelfSwitches_setValue = Game_SelfSwitches.prototype.setValue;
 Game_SelfSwitches.prototype.setValue = function(key, value) {
+    var oldValue = this.value(key);  // Get the old value of the self switch
     if (EnableSelfSwitch) { // Only execute if SelfSwitch tracking is enabled
         var eventId = key[1];
         var selfSwitchId = key[2];
         var event = $gameMap.event(eventId);
         var oldPageId = event.findProperPageIndex() + 1; // +1 for RPG Maker's 1-based indexing
+
+        // Skip logging if the event is running parallel process or autorun and has already been logged
+        var currentPage = event.event().pages[oldPageId - 1];
+        if ((currentPage.trigger === 4 || currentPage.trigger === 5) && event._logged) {
+            _Game_SelfSwitches_setValue.call(this, key, value);
+            return;
+        }
         
         _Game_SelfSwitches_setValue.call(this, key, value);
-    
-        var scene = SceneManager._scene;
-        if (scene instanceof Scene_Map && scene._debugLogWindow) {
-            var newPageId = event.findProperPageIndex() + 1; // +1 for RPG Maker's 1-based indexing
-    
-            if (value) { // Only log when the switch is turned on
-                var logText1 = getCurrentTime() + " " + event.event().name + "(#" + eventId + ") [SELF](" + selfSwitchId + ") Enabled";
+        
+        if (oldValue !== value) {  // Only log if the self switch value has actually changed
+            var scene = SceneManager._scene;
+            if (scene instanceof Scene_Map && scene._debugLogWindow) {
+                var newPageId = event.findProperPageIndex() + 1; // +1 for RPG Maker's 1-based indexing
+                var switchState = value ? "Enabled" : "Disabled"; // Get the state of the switch
+        
+                var logText1 = getCurrentTime() + " " + event.event().name + "(#" + eventId + ") [SELF](" + selfSwitchId + ") " + switchState;
                 var logText2 = getCurrentTime() + " " + event.event().name + "(#" + eventId + ")" + " Page changed from (" + oldPageId + ") to (" + newPageId + ")";
                 scene._debugLogWindow.addLine(logText1);
                 scene._debugLogWindow.addLine(logText2);
+                
+                // Mark the event as logged if it is a parallel process or autorun
+                if (currentPage.trigger === 4 || currentPage.trigger === 5) {
+                    event._logged = true;
+                }
             }
         }
     } else {
         _Game_SelfSwitches_setValue.call(this, key, value);
     }
 };
+
+// Reset the logged property when the event starts
+var _Game_Interpreter_setup = Game_Interpreter.prototype.setup;
+Game_Interpreter.prototype.setup = function(list, eventId) {
+    _Game_Interpreter_setup.call(this, list, eventId);
+    var event = $gameMap.event(eventId);
+    if (event) {
+        event._logged = false;
+    }
+};
+
 
 
 
@@ -1523,21 +1600,35 @@ Game_Interpreter.prototype.commandReturn = function() {
 
 // check Gold changes
 
-
+// Backup original gainGold function
+var _Game_Party_gainGold = Game_Party.prototype.gainGold;
 Game_Party.prototype.gainGold = function(amount) {
-    _Game_Party_gainGold.call(this, amount);
-    var scene = SceneManager._scene;
-    if (scene instanceof Scene_Map && scene._debugLogWindow) {
-        var currentTime = getCurrentTime();
-        var logText = currentTime;
-        if(amount > 0){
-            logText += "[GOLD]" + " + " + amount + " " + TextManager.currencyUnit + " gained";
-        } else {
-            logText += "[GOLD]" + " - " + Math.abs(amount) + " " + TextManager.currencyUnit + " removed";
+    var oldGold = this.gold(); // Save old gold amount
+    var newGold = oldGold + amount; // Calculate new gold amount
+
+    // If gold amount changes
+    if (oldGold !== newGold) {
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var currentTime = getCurrentTime();
+            var logText = currentTime;
+            if(newGold > oldGold){
+                logText += "[GOLD]" + " + " + (newGold - oldGold) + " " + TextManager.currencyUnit + " gained";
+            } else {
+                logText += "[GOLD]" + " - " + (oldGold - newGold) + " " + TextManager.currencyUnit + " removed";
+            }
+            scene._debugLogWindow.addLine(logText);
         }
-        scene._debugLogWindow.addLine(logText);
+    }
+
+    _Game_Party_gainGold.call(this, amount); // Call original method
+    
+    var scene = SceneManager._scene;
+    if (scene instanceof Scene_Map && scene._goldWindow) {
+        scene._goldWindow.refresh();
     }
 };
+
 
 
 // Event call - levle up / down tracker
@@ -1685,6 +1776,68 @@ Game_Event.prototype.erase = function() {
     if (scene instanceof Scene_Map && scene._debugLogWindow) {
         var logText = getCurrentTime() + "[" + this.event().name + " #" + this._eventId + " deleted";
         scene._debugLogWindow.addLine(logText);
+    }
+};
+
+
+// conditional branch condition tracker
+
+
+var _Game_Interpreter_command111 = Game_Interpreter.prototype.command111;
+Game_Interpreter.prototype.command111 = function(params) {
+    // Store the original value of this._branch[this._indent]
+    var originalBranchResult = this._branch[this._indent];
+
+    _Game_Interpreter_command111.call(this, params);
+
+    // If the condition result is different from the original result, it was evaluated
+    if (this._branch[this._indent] !== originalBranchResult && this._branch[this._indent] === false) {
+        var eventId = this._eventId;
+        var event = $gameMap.event(eventId);
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var logText = getCurrentTime() + " " + event.event().name + "(#" + eventId + ") [CONDITIONAL BRANCH] - FALSE";
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+};
+
+
+// event movement Log // MOVEMENT ROUTE
+
+var _Game_Event_initialize = Game_Event.prototype.initialize;
+Game_Event.prototype.initialize = function(mapId, eventId) {
+    _Game_Event_initialize.call(this, mapId, eventId);
+    this._isMoving = false;
+};
+
+var _Game_Event_processRouteEnd = Game_Event.prototype.processRouteEnd;
+Game_Event.prototype.processRouteEnd = function() {
+    _Game_Event_processRouteEnd.call(this);
+    if (this._isMoving && EnableMoveMentLog) {
+        this._isMoving = false;
+        var eventId = this._eventId;
+        var event = $gameMap.event(eventId);
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var logText = getCurrentTime() + " " + event.event().name + "(#" + eventId + ") [MOVEMENT] - Ended";
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+};
+
+var _Game_Event_moveStraight = Game_Event.prototype.moveStraight;
+Game_Event.prototype.moveStraight = function(d) {
+    _Game_Event_moveStraight.call(this, d);
+    if (!this._isMoving && this.isMovementSucceeded() && EnableMoveMentLog) {
+        this._isMoving = true;
+        var eventId = this._eventId;
+        var event = $gameMap.event(eventId);
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var logText = getCurrentTime() + " " + event.event().name + "(#" + eventId + ") [MOVEMENT] - Started";
+            scene._debugLogWindow.addLine(logText);
+        }
     }
 };
 
