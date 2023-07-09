@@ -16,9 +16,9 @@ Use for example Yanfly CoreEngine.
 
 In addition to the log window, it also contains some additional windows that can be turned off and on:
 
-Game time
-Steps
-Gold meter
+* Game time
+* Steps
+* Gold meter
 
 ### Special module window group. 
 There are currently 2 groups available, and only one group can be active at a time.
