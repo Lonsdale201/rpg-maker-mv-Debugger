@@ -102,4 +102,9 @@ The one is the ID of the event, and you can give the text a coloring if you like
 
 **Known issue:**
 
-For common events, we are still working on the proper logging system, just like for traditional event parallel triggers, so you can't track them precisely yet.
+Autorun and Paralell events cannot currently be manually tracked properly. Here I am mainly working on finding an optimized solution for logging them.
+
+For the Common event, there is already a partially developed watcher. It would obviously be useful to know if a switch was activated by a Common event or vice versa. 
+
+It is a high priority to complete this function.
+Currently, information can be printed from a parallel event. But if it is spammed, performance problems can occur, as it will keep trying to log (these are usually rare, but can happen)
