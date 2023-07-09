@@ -7,11 +7,10 @@
 * @author Soczó Kristóf
 * @help
 * Fasza debugger rendszer
-* Script commands: this.logCommonEvent(n) change the n with your common event id
+* Script commands: this.logCommonEvent(n) change the n with your common event id. At the MOMENT NOT RECOMMENDED TO USE STILL IN DEVELOPMENT
 * this.logEvent(this._eventId); will print the event name and if you are using the this.finishEvent(this._eventId); you can make a better hierarchy
 * this.createEventLabel(1, "Hello World", "red");
 * 
-* Kapcsold kia  log ablakot amíg HARC vAN ! (KÉSZ)
 * Track list:   Switcher state
 *               Self Switch State
 *               Variables changes
@@ -26,7 +25,8 @@
 *               Battle LOG (win/ lose / escaped / defated mobs / battle time)
 *               Quest Jorunay (Yanfly)
 *
-* Quest Journay supported logs: Plugin commands only: Only support Quest (and not objectives) - Completed, Failed, Add, remove, AVAILABLE 
+* Quest Journay supported logs: Plugin commands only: Only support Quest (and not objectives) - Completed, Added (all of types : single, multiple, or ranges)
+* Note that this monitors the running of the plugin command.
 *
 * @param Windows
 *
@@ -114,7 +114,7 @@
 * @parent Logs
 * @type variable
 * @default 2
-* @desc Variable for game starter log track. Delete if not need starter log. Please use greater then 1 var value if need.
+* @desc Variable for game starter log track. Set None aka 0 if not want to log the Start.
 *
 * @param EnableSelfSwitch
 * @text Enable Self Switch log
@@ -1401,7 +1401,7 @@ Game_Interpreter.prototype.logEvent = function(eventId) {
         
         if (logText !== "") {
             scene._debugLogWindow.addLine(logText);
-            scene._debugLogWindow.addLine(currentTime + " ------------------------");
+            scene._debugLogWindow.addLine(currentTime + " ----------------------------------------");
 
             this._eventStore[eventId] = {
                 id: eventId,
@@ -1430,7 +1430,7 @@ Game_Interpreter.prototype.checkRunningEvents = function() {
 
                     var logTextEnd = currentTime + " " + currentEvent.event().name + "(#" + eventId + ") PAGE " + storedEvent.pageId + " ENDED";
                     scene._debugLogWindow.addLine(logTextEnd);
-                    scene._debugLogWindow.addLine(currentTime + " ------------------------");
+                    scene._debugLogWindow.addLine(currentTime + " ----------------------------------------");
 
                     storedEvent.pageId = currentPageId;
                 }
@@ -1451,7 +1451,7 @@ Game_Interpreter.prototype.endEvent = function(eventId) {
         
         if (logText !== "") {
             scene._debugLogWindow.addLine(logText);
-            scene._debugLogWindow.addLine(currentTime + " ------------------------");
+            scene._debugLogWindow.addLine(currentTime + " ----------------------------------------");
 
             delete this._eventStore[eventId];
             delete this._loggedEvents[eventId];
@@ -1472,7 +1472,7 @@ Game_Interpreter.prototype.checkAndLogEventEnds = function() {
                     var logText = currentTime + " " + currentEvent.event().name + "(#" + eventId + ") PAGE " + storedEvent.pageId + " ENDED";
                     
                     scene._debugLogWindow.addLine(logText);
-                    scene._debugLogWindow.addLine(currentTime + " ----------------------------");
+                    scene._debugLogWindow.addLine(currentTime + " ----------------------------------------");
 
                     delete this._eventStore[eventId];
                     delete this._loggedEvents[eventId];
@@ -1493,7 +1493,7 @@ Game_Interpreter.prototype.finishEvent = function(eventId) {
             var logText = currentTime + " " + currentEvent.event().name + "(#" + eventId + ") PAGE " + storedEvent.pageId + " ENDED";
 
             scene._debugLogWindow.addLine(logText);
-            scene._debugLogWindow.addLine(currentTime + " ----------------------------");
+            scene._debugLogWindow.addLine(currentTime + " ----------------------------------------");
 
             delete this._eventStore[eventId];
             delete this._loggedEvents[eventId];
@@ -1637,7 +1637,7 @@ BattleManager.endBattle = function(result) {
     var battleDuration = Date.now() - this._battleStartTime; // Calculate battle duration
     var logText = currentTime;
 
-    INDIE.Debugger._debugLog.addLine("----------------------------"); // Add separation line at the start
+    INDIE.Debugger._debugLog.addLine("----------------------------------------"); // Add separation line at the start
 
     // results
     switch(result) {
@@ -1671,7 +1671,7 @@ BattleManager.endBattle = function(result) {
     // Add log entry
     // INDIE.Debugger._debugLog.addLine(logText);
 
-    INDIE.Debugger._debugLog.addLine("----------------------------"); // Add separation line at the end
+    INDIE.Debugger._debugLog.addLine("----------------------------------------"); // Add separation line at the end
 };
 
 
@@ -1721,11 +1721,6 @@ Game_Variables.prototype.setValue = function(variableId, value) {
     // Call the original setValue function to actually update the variable
     _Game_Variables_setValue.call(this, variableId, value);
 };
-
-
-
-
-
 
 
 
@@ -1867,106 +1862,83 @@ Game_Interpreter.prototype.finishCommonEvent = function(commonEventId) {
     
 // YANFLY QUEST JOURNEY
 
-// var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
-// Game_Interpreter.prototype.pluginCommand = function(command, args) {
-//     _Game_Interpreter_pluginCommand.call(this, command, args); // Call original function
 
-//     // Check if the command is "Quest" and the first argument is "Add" or "Remove"
-//     if (command.toUpperCase() === "QUEST" && args.length > 0 && EnableQuestLog) {
-//         // Get the current game time
-//         var currentTime = getCurrentTime(); 
-//         // Check if Quest Journal is installed and enabled
-//         if (typeof $dataQuests !== "undefined") {
-//         if (args[0].toUpperCase() === "ADD") {
-//             // Loop through all args from 1 (ignore "Add")
-//             for (var i = 1; i < args.length; i++) {
-//                 // Split each argument by commas
-//                 var questIds = args[i].split(",");
-//                 for (var j = 0; j < questIds.length; j++) {
-//                     // Convert the quest ID to a number
-//                     var questId = parseInt(questIds[j]);
-//                     // Get the quest name
-//                     var questName = $dataQuests[questId].name;
-//                     // Remove text formatting characters from quest name
-//                     questName = questName.replace(/\\.\[\d+\]/g, '').trim();
-//                     // Log the added quest name
-//                     INDIE.Debugger._debugLog.addLine(currentTime + " [QUEST] " + questName + " - Started");
-//                 }
-//             }
-//         } else if (args[0].toUpperCase() === "REMOVE") {
-//             // Loop through all args from 1 (ignore "Remove")
-//             for (var i = 1; i < args.length; i++) {
-//                 // Split each argument by commas
-//                 var questIds = args[i].split(",");
-//                 for (var j = 0; j < questIds.length; j++) {
-//                     // Convert the quest ID to a number
-//                     var questId = parseInt(questIds[j]);
-//                     // Get the quest name
-//                     var questName = $dataQuests[questId].name;
-//                     // Remove text formatting characters from quest name
-//                     questName = questName.replace(/\\.\[\d+\]/g, '').trim();
-//                     // Log the removed quest name
-//                     INDIE.Debugger._debugLog.addLine(currentTime + " [QUEST] " + questName + " - Removed");
-//                 }
-//             }
-//         }
-//     }
-// }
-// };
+// SUPP ADD AND COMPLETED
 
+// Store the original pluginCommand function
 var _Game_Interpreter_pluginCommand = Game_Interpreter.prototype.pluginCommand;
+
 Game_Interpreter.prototype.pluginCommand = function(command, args) {
-    _Game_Interpreter_pluginCommand.call(this, command, args); // Call original function
+    // Call the original pluginCommand function
+    _Game_Interpreter_pluginCommand.call(this, command, args);
 
-    // Check if the command is "Quest" and the first argument is "Add", "Remove", "Complete", "Fail", "Set Completed", "Set Failed", or "Set Available"
-    if (command.toUpperCase() === "QUEST" && args.length > 0 && EnableQuestLog) {
-        // Get the current game time
-        var currentTime = getCurrentTime(); 
+    // Only execute if our quest system is enabled
+    if ($gameSystem.isShowQuest() && $gameSystem.isEnableQuest()) {
+        // Check if the command is "QUEST"
+        if (command.toUpperCase() === "QUEST" && args.length > 0) {
+            var argString = this.argsToString(args);
+            var action = argString.split(" ")[0].toUpperCase();
+            var remainingString = argString.substring(action.length).trim();
+            var completedAction = false;
+            if (remainingString.toUpperCase().startsWith("COMPLETED")) {
+                completedAction = true;
+                remainingString = remainingString.substring("COMPLETED".length).trim();
+            }
 
-        // Check if Quest Journal is installed and enabled
-        if (typeof $dataQuests !== "undefined") {
-            // Loop through all args from 1 (ignore first command)
-            for (var i = 1; i < args.length; i++) {
-                // Split each argument by commas
-                var questIds = args[i].split(",");
-                for (var j = 0; j < questIds.length; j++) {
-                    // Convert the quest ID to a number
-                    var questId = parseInt(questIds[j]);
-                    // Check if the quest ID is valid
-                    if ($dataQuests[questId]) {
-                        // Get the quest name
-                        var questName = $dataQuests[questId].name;
-                        // Remove text formatting characters from quest name
-                        questName = questName.replace(/\\.\[\d+\]/g, '').trim();
-                        // Determine action based on the first command argument
-                        switch (args[0].toUpperCase()) {
-                            case "ADD":
-                                INDIE.Debugger._debugLog.addLine(currentTime + " [QUEST] " + questName + " Started");
-                                break;
-                            case "REMOVE":
-                                INDIE.Debugger._debugLog.addLine(currentTime + " [QUEST] " + questName + " Removed");
-                                break;
-                            case "SET":
-                                switch(args[1].toUpperCase()) {
-                                    case "COMPLETED":
-                                        INDIE.Debugger._debugLog.addLine(currentTime + " [QUEST] " + questName + " Completed");
-                                        break;
-                                    case "FAILED":
-                                        INDIE.Debugger._debugLog.addLine(currentTime + " [QUEST] " + questName + " Failed");
-                                        break;
-                                    case "AVAILABLE":
-                                        INDIE.Debugger._debugLog.addLine(currentTime + " [QUEST] " + questName + " Available");
-                                        break;
-                                }
-                                break;
-                        }
+            // Check for a range
+           // Check for a range
+            var rangeMatch = remainingString.match(/(\d+) TO (\d+)/i);
+            if (rangeMatch) {
+                var rangeStart = parseInt(rangeMatch[1]);
+                var rangeEnd = parseInt(rangeMatch[2]);
+                for (var i = rangeStart; i <= rangeEnd; i++) {
+                    this.logQuestAction(i, completedAction ? "Completed" : "Started");
+                }this.logQuestAction(i, completedAction ? "Completed" : "Started");
+                     
+            } else {
+                // If not a range, check for a list
+                var listMatch = remainingString.match(/([\d,]+)/i);
+                if (listMatch) {
+                    var ids = listMatch[1].split(",");
+                    for (var i = 0; i < ids.length; i++) {
+                        this.logQuestAction(ids[i], completedAction ? "Completed" : "Started");
                     }
+                } else {
+                    // If not a list, it must be a single ID
+                var idMatch = remainingString.match(/(\d+)/i);
+                if (idMatch) {
+                    this.logQuestAction(idMatch[1], completedAction ? "Completed" : "Started");
+                }
                 }
             }
         }
     }
 };
 
+Game_Interpreter.prototype.logQuestAction = function(questId, action) {
+    if ($dataQuests.hasOwnProperty(questId)) {
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            // Retrieve the current time
+            var currentTime = getCurrentTime();
+            var questTitle = $dataQuests[questId].name;
+            // Remove icon codes from the quest title
+            var cleanTitle = questTitle.replace(/\\i\[\d+\]/g, '');
+            // Construct the log message
+            var logText = currentTime + " [QUEST] " + cleanTitle + " " + action;
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+};
+
+Game_Interpreter.prototype.argsToString = function(args) {
+    var str = '';
+    var length = args.length;
+    for (var i = 0; i < length; ++i) {
+        str += args[i] + ' ';
+    }
+    return str.trim();
+};
 
 
 
@@ -2077,13 +2049,5 @@ Scene_Map.prototype.createEventLabels = function() {
         }, this);
     }, this);
 };
-
-
-
-
-
-
-
-
 
 })(INDIE.Debugger);
