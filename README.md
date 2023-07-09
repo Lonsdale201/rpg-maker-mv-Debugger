@@ -2,6 +2,7 @@
 Useful debugging plug-in for the RPG MAKER MV
 
 **Version Alpha 0.1**
+
 **For future plugin compatibility, it is recommended to place the debugger on top of the plugin manager!**
 
 
