@@ -47,7 +47,7 @@ There is currently compatibility with one extension:
 
 **Yanfly Quest Journey:**
 
-Supported logs: plugin commands only: Completed, Failed, Add, Remove, Available.
+Supported logs: plugin commands only: Completed, Added ( all three types: single, multiple, and range version plugin commands)
 
 For objective performances, a trimming technique is still being developed, as it is not advisable to add too long entries, and the names of the objectives can be long.
 
