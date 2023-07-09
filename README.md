@@ -113,11 +113,11 @@ Currently, information can be printed from a parallel event. But if it is spamme
 ### Changelog
 
 0.15 
-Refactored the Switcher log. Now better handling, when come the log from paralell or autorun events.
-Refactored the Self Switcher log. Now better handling, when come the log from paralell or autorun events. (Bonus Disable logging)
-Refactored better gold gain / remove handling
-**NEW** Conditional Branch False log.
-**NEW** Movement Route log
+* Refactored the Switcher log. Now better handling, when come the log from paralell or autorun events.
+* Refactored the Self Switcher log. Now better handling, when come the log from paralell or autorun events. (Bonus Disable logging)
+* Refactored better gold gain / remove handling
+* **NEW** Conditional Branch False log.
+* **NEW** Movement Route log
 
 
 0.1 - initial release
