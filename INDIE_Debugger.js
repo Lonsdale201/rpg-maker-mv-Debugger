@@ -1872,8 +1872,11 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
     // Call the original pluginCommand function
     _Game_Interpreter_pluginCommand.call(this, command, args);
 
-    // Only execute if our quest system is enabled
-    if ($gameSystem.isShowQuest() && $gameSystem.isEnableQuest()) {
+    // Only execute if the Quest Journal plugin is enabled and our quest system is enabled
+    if (typeof $gameSystem.isShowQuest === "function" &&
+        typeof $gameSystem.isEnableQuest === "function" &&
+        $gameSystem.isShowQuest() && 
+        $gameSystem.isEnableQuest()) {
         // Check if the command is "QUEST"
         if (command.toUpperCase() === "QUEST" && args.length > 0) {
             var argString = this.argsToString(args);
@@ -1886,15 +1889,13 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
             }
 
             // Check for a range
-           // Check for a range
             var rangeMatch = remainingString.match(/(\d+) TO (\d+)/i);
             if (rangeMatch) {
                 var rangeStart = parseInt(rangeMatch[1]);
                 var rangeEnd = parseInt(rangeMatch[2]);
                 for (var i = rangeStart; i <= rangeEnd; i++) {
                     this.logQuestAction(i, completedAction ? "Completed" : "Started");
-                }this.logQuestAction(i, completedAction ? "Completed" : "Started");
-                     
+                } 
             } else {
                 // If not a range, check for a list
                 var listMatch = remainingString.match(/([\d,]+)/i);
@@ -1905,10 +1906,10 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
                     }
                 } else {
                     // If not a list, it must be a single ID
-                var idMatch = remainingString.match(/(\d+)/i);
-                if (idMatch) {
-                    this.logQuestAction(idMatch[1], completedAction ? "Completed" : "Started");
-                }
+                    var idMatch = remainingString.match(/(\d+)/i);
+                    if (idMatch) {
+                        this.logQuestAction(idMatch[1], completedAction ? "Completed" : "Started");
+                    }
                 }
             }
         }
@@ -1941,7 +1942,9 @@ Game_Interpreter.prototype.argsToString = function(args) {
 };
 
 
-
+//=============================================================================
+// ** Diables log via script call (in development)
+//=============================================================================
 
 
 
