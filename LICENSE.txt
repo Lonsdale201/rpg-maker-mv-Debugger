@@ -1,0 +1,22 @@
+Creative Commons NonCommercial-NoDerivs 3.0 Unported License
+
+INDIE_Debugger plugin
+Copyright (c) 2023 Soczó Kristóf
+
+Soczó Kristóf tulajdona. Az engedély ittmitartólag adott a dokumentációhoz és/vagy más fájlokhoz, amelyek ezzel az állománnyal együtt vannak, a használatra, másolásra, terjesztésre, birtoklásra, és/vagy módosításra, a következő feltételek mellett:
+
+- Az INDIE_Debugger plugin nem módosítható.
+- Az INDIE_Debugger plugin nem értékesíthető kereskedelmi célból.
+- Az INDIE_Debugger plugin használatával kapcsolatos szerzői jogi nyilatkozatot és a Soczó Kristóf név említését meg kell tartani minden másolatban és terjesztésben.
+
+
+Creative Commons NonCommercial-NoDerivs 3.0 Unported License
+
+INDIE_Debugger plugin
+Copyright (c) 2023 Soczó Kristóf
+
+Owned by Soczó Kristóf. Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to use, copy, distribute, possess, and/or modify the Software, under the following conditions:
+
+- The INDIE_Debugger plugin may not be modified.
+- The INDIE_Debugger plugin may not be sold for commercial purposes.
+- The copyright notice and the name Soczó Kristóf must be retained in all copies or substantial portions of the Software.
