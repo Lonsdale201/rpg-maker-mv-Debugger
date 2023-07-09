@@ -17,14 +17,15 @@ Game time
 Steps
 Gold meter
 
-And a special module window group. 
+### Special module window group. 
 There are currently 2 groups available, and only one group can be active at a time.
 These are always 3 maximum windows, which appear directly above your logging window.
 
 In the first group you can visually track the changes of 3 items in relatime.
 
 In the second group you can add player (leader) info e.g.: (these are also updated in real time)
-HP / MP / TP / LEVEL / ACTOR NAME / CLASS /
+
+**HP / MP / TP / LEVEL / ACTOR NAME / CLASS /**
 
 
 **Event action Track list:**
@@ -55,6 +56,10 @@ For objective performances, a trimming technique is still being developed, as it
 **this.logEvent(this._eventId)** you need to call this at the top of your event page.
 **this.finishEvent(this._eventId);** and this to the bottom of your event page.
 
+Sample:
+![image](https://github.com/Lonsdale201/rpg-maker-mv-Debugger/assets/23199033/98fd7e7c-80c0-4bc6-8291-0b1fc4ec8b98)
+
+
 Unfortunately, you have to set it for each page if you want to use it.
 
 ### There is a starter log built in. It runs when you start the game. 
@@ -63,12 +68,12 @@ To do this, you need to store a var for it, because it only needs to be run once
 
 The Starter returns the following data (this is from the player + track):
 
-Current Map name
-Current cooridnate
-Dash enabled / or not
-Encounters on the track
-How many people are in the party
-How much gold the player has
+* Current Map name
+* Current cooridnate
+* Dash enabled / or not
+* Encounters on the track
+* How many people are in the party
+* How much gold the player has
 
 ![image](https://github.com/Lonsdale201/rpg-maker-mv-Debugger/assets/23199033/67cba9ba-c6ff-448b-bc8a-8a1a6ddb71bc)
 
