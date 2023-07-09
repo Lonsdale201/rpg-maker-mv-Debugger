@@ -108,3 +108,16 @@ For the Common event, there is already a partially developed watcher. It would o
 
 It is a high priority to complete this function.
 Currently, information can be printed from a parallel event. But if it is spammed, performance problems can occur, as it will keep trying to log (these are usually rare, but can happen)
+
+
+### Changelog
+
+0.15 
+Refactored the Switcher log. Now better handling, when come the log from paralell or autorun events.
+Refactored the Self Switcher log. Now better handling, when come the log from paralell or autorun events. (Bonus Disable logging)
+Refactored better gold gain / remove handling
+**NEW** Conditional Branch False log.
+**NEW** Movement Route log
+
+
+0.1 - initial release
