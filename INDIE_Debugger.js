@@ -10,6 +10,8 @@
 * Useful tool for debug your project visually when running the game
 * /=====================================================================/
 * 
+*
+* 
 * Script commands:
 *
 * this.logCommonEvent(n) change the n with your common event id. At the MOMENT NOT RECOMMENDED TO USE STILL IN DEVELOPMENT
@@ -28,7 +30,9 @@
 *               Common event (manually)
 *               Erase event
 *               Party changed (add / remove)
-*               Battle LOG (win/ lose / escaped / defated mobs / battle time)
+*               Movement Route
+*               Conditional Branch
+*               Steps Log
 *               Quest Jorunay (Yanfly)
 *
 * Quest Journay supported logs: Plugin commands only: Only support Quest
@@ -37,9 +41,21 @@
 * Note that this monitors the running of the plugin command.
 *
 * Changelog
+*
+* 0.16
+* Fixed the Conditional Branch log Bug. (cant freeze anymore the game)
+* Removed the Battle logs (It is being redesigned.)
+* Fixed the three player info window position, and fixed the 
+* third window battle visibility  bug
+* From now on, when the fight is over and the player has won,
+* the battle does not delete the previous log entries.
+* Starter log : Added a new Party player names log, and map tilesets name log
+* NEW configurable Steps log (repeat)
+* NEW ItemEnable log param
 * /=====================================================================/
 *
 * 0.15 
+*
 * Refactored the Switcher log system (now better handling / 
 * performance and bypass the autorun and paralell spam)
 * Refactored the Self Switcher log system (now better handling 
@@ -113,13 +129,6 @@
 *
 * @param Logs
 *
-* @param EnableBattleLogs
-* @text Enable Battle logs
-* @parent Logs
-* @type boolean
-* @default true
-* @desc enable or disable the Battle logs. (will show after battle end)
-*
 * @param EnableQuestLog
 * @text Enable Quest Log
 * @parent Logs
@@ -154,6 +163,20 @@
 * @type boolean
 * @default true
 * @desc enable or disable the Movement log (only for events)
+*
+* @param EnableItemLog
+* @text Enable Items Log
+* @parent Logs
+* @type boolean
+* @default true
+* @desc enable or disable the items gain / remove logs
+*
+* @param StepsLog
+* @text Steps log
+* @parent Logs
+* @type number
+* @default 100
+* @desc You can log, if player reach selected amount of steps (this will repeat). Min log value 25 steps
 *
 * @param Modal Window Group #1
 *
@@ -256,7 +279,6 @@ INDIE.Debugger = INDIE.Debugger || {};
     var enableStepCounterWIndow = JSON.parse(parameters['EnableStepCounterWIndow'] || 'true');
     var enableLogWindow = JSON.parse(parameters['EnableLogWindow'] || 'true'); 
     var smartFadeEnable = JSON.parse(parameters['SmartFadeEnable'] || 'true');
-    var EnableBattleLogs = JSON.parse(parameters['EnableBattleLogs'] || 'true');
 
     // yanfly Quest Journay
     var EnableQuestLog = JSON.parse(parameters['EnableQuestLog'] || 'false');
@@ -266,8 +288,10 @@ INDIE.Debugger = INDIE.Debugger || {};
     var EnableVarTracker = JSON.parse(parameters['EnableVarTracker'] || 'true');
     var EnableSelfSwitch = JSON.parse(parameters['EnableSelfSwitch'] || 'true');
     var EnableMoveMentLog = JSON.parse(parameters['EnableMoveMentLog'] || 'true');
+    var EnableItemLog = JSON.parse(parameters['EnableItemLog'] || 'true');
 
     var StarterVariable = Number(parameters['StarterVariable'] || '2');
+    var StepsLog = Number(parameters['StepsLog'] || '100');
 
     var logScrollUpKey = parameters['LogWindowScrollUp'] || 'y'; // Default 'y'
     var logScrollDownKey = parameters['LogWindowScrollDown'] || 'c'; // Default 'c'
@@ -311,7 +335,7 @@ var _Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
     Scene_Map.prototype.createAllWindows = function() {
         _Scene_Map_createAllWindows.call(this);
         if(enableGoldWindow){
-            this._goldWindow = new GoldWindow(10, 10);  // Move the window 10px down and to the right
+            this._goldWindow = new GoldWindow(10, 10);  
             this.addWindow(this._goldWindow);
         }
         if (enableGameTimeWindow) {  
@@ -400,27 +424,29 @@ var _Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
     
 
    
-    // Item log
-    // Azért írtuk ide, mert az item watcher -el egybe kellett rakni a Gainitem frissítés miatt.
+  
+    // Required inf.
 
+   // Item log
     var _Game_Party_gainItem = Game_Party.prototype.gainItem;
     Game_Party.prototype.gainItem = function(item, amount, includeEquip) {
-    _Game_Party_gainItem.call(this, item, amount, includeEquip);
-    if (SceneManager._scene instanceof Scene_Map && SceneManager._scene._itemWatcherWindow) {
-        SceneManager._scene._itemWatcherWindow.refresh();
-    }
-    var scene = SceneManager._scene;
-    if (scene instanceof Scene_Map && scene._debugLogWindow) {
-        var currentTime = getCurrentTime();
-        var logText = currentTime + " [ITEM]" + " " + item.name + " x" + Math.abs(amount);
-        if(amount > 0){
-            logText += " gained";
-        } else {
-            logText += " taken away";
+        _Game_Party_gainItem.call(this, item, amount, includeEquip);
+        if (SceneManager._scene instanceof Scene_Map && SceneManager._scene._itemWatcherWindow) {
+            SceneManager._scene._itemWatcherWindow.refresh();
         }
-        scene._debugLogWindow.addLine(logText);
-    }
-};
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow && EnableItemLog) {
+            var currentTime = getCurrentTime();
+            var logText = currentTime + " [ITEM]" + " " + item.name + " x" + Math.abs(amount);
+            if(amount > 0){
+                logText += " gained";
+            } else {
+                logText += " taken away";
+            }
+            scene._debugLogWindow.addLine(logText);
+        }
+    };
+
 
 // Item Watcher #2
 
@@ -592,7 +618,7 @@ Window_PlayerInfo2.prototype.initialize = function() {
     this._playerLevel = $gameParty.leader().level; 
     var width = this.windowWidth();
     var height = this.windowHeight();
-    var x = Graphics.boxWidth - 450 + width;  // Módosítás: Az ablakot a korábbi ablak mellett jeleníti meg
+    var x = Graphics.boxWidth - 450 + this.windowWidth() + 5;
     var y = Graphics.boxHeight - 500 - height;
     Window_Base.prototype.initialize.call(this, x, y, width, height);
     this.refresh();
@@ -671,8 +697,7 @@ Window_PlayerInfo3.prototype.initialize = function() {
     this._playerLevel = $gameParty.leader().level; 
     var width = this.windowWidth();
     var height = this.windowHeight();
-    // var x = Graphics.boxWidth - 450 + (this.windowWidth() * 2) + 10; 
-    var x = Graphics.boxWidth - 450 + (this.windowWidth() * 2) + 5;
+    var x = Graphics.boxWidth - 450 + (this.windowWidth() * 2) + 10;
     var y = Graphics.boxHeight - 500 - height;
     Window_Base.prototype.initialize.call(this, x, y, width, height);
     this.refresh();
@@ -1142,10 +1167,10 @@ Window_PlayerInfo2.prototype.update = function() {
                 this._playerLevel = $gameParty.leader().level;
                 this.refresh();
             }
-            if(SceneManager._scene.constructor !== Scene_Battle) { 
-                this.show(); 
+            if(INDIE.Debugger.isBattleRunning) {
+                this.hide(); 
             } else {
-                this.hide();
+                this.show(); 
             }
         } else {
             this.hide();
@@ -1270,10 +1295,10 @@ Window_Message.prototype.terminateMessage = function() {
 };
 
 
+
 //=============================================================================
 // ** Delete logs when game over, or new game started
 //=============================================================================
-
 var _Scene_Gameover_start = Scene_Gameover.prototype.start;
 Scene_Gameover.prototype.start = function() {
     _Scene_Gameover_start.call(this);
@@ -1282,6 +1307,11 @@ Scene_Gameover.prototype.start = function() {
         INDIE.Debugger.logData = [];  // Clear global log data
     }
 };
+
+
+//=============================================================================
+// ** Delete logs when new game started
+//=============================================================================
 
 var _Scene_Title_start = Scene_Title.prototype.start;
 Scene_Title.prototype.start = function() {
@@ -1292,10 +1322,15 @@ Scene_Title.prototype.start = function() {
     }
 };
 
+
+
 Window_DebugLog.prototype.clear = function() {
+    console.trace("Window_DebugLog clear method called");
     this._log = [];
     this.refresh();
 };
+
+
 //=============================================================================
 // ** Log Scroll keyups
 //=============================================================================
@@ -1317,14 +1352,14 @@ Window_DebugLog.prototype.keyInput = function() {
 };
 
 
-
-
-
 //=============================================================================
-// ** Log watcher's
+// ** Log watcher's - STARTER LOGS
 //=============================================================================
 
-// STARTER LOGS
+// startervar param
+//=============================================================================
+// ** Log watcher's - STARTER LOGS
+//=============================================================================
 
 // startervar param
 var gameHasStartedVariableId = StarterVariable;
@@ -1337,15 +1372,26 @@ Scene_Map.prototype.start = function() {
     if (gameHasStartedVariableId && gameHasStartedVariableId > 0 && !$gameVariables.value(gameHasStartedVariableId)) {
         $gameVariables.setValue(gameHasStartedVariableId, 1);
 
-        var separator = getCurrentTime() + " ------------------------";
+        var separator = getCurrentTime() + " ----------------------------------------";
         this._debugLogWindow.addLine(separator);
-        this._debugLogWindow.addLine(getCurrentTime() + " Game started");
+        this._debugLogWindow.addLine(getCurrentTime() + " GAME STARTED");
+        this._debugLogWindow.addLine(separator);
 
         var partySize = $gameParty.size();
-        this._debugLogWindow.addLine(getCurrentTime() + " Your party size: " + partySize);
+        this._debugLogWindow.addLine(getCurrentTime() + " PARTY SIZE: " + partySize);
+
+        var partyMembers = $gameParty.members();
+        var partyMemberNames = partyMembers.map(function(member) {
+            return member.name();
+        });
+        this._debugLogWindow.addLine(getCurrentTime() + " PARTY MEMBERS: " + partyMemberNames.join(', '));
 
         var mapName = $dataMapInfos[$gameMap._mapId].name;
-        this._debugLogWindow.addLine(getCurrentTime() + " Loaded map " + mapName);
+        this._debugLogWindow.addLine(getCurrentTime() + " LOADED MAP: " + mapName);
+
+        var tilesetId = $dataMap.tilesetId;
+        var tilesetName = $dataTilesets[tilesetId].name;
+        this._debugLogWindow.addLine(getCurrentTime() + " LOADED TILESET: " + tilesetName);
 
         var goldName = TextManager.currencyUnit;
         var goldAmount = $gameParty.gold();
@@ -1353,7 +1399,7 @@ Scene_Map.prototype.start = function() {
 
         var playerX = $gamePlayer.x;
         var playerY = $gamePlayer.y;
-        this._debugLogWindow.addLine(getCurrentTime() + " Player position: X=" + playerX + " Y=" + playerY);
+        this._debugLogWindow.addLine(getCurrentTime() + " PLAYER POSITION: X=" + playerX + " Y=" + playerY);
 
         var encountersExist = $dataMap.encounterList.length > 0;
         this._debugLogWindow.addLine(getCurrentTime() + " Encounters exist on this map: " + (encountersExist ? "Yes" : "No"));
@@ -1367,23 +1413,11 @@ Scene_Map.prototype.start = function() {
 };
 
 
-// Check switchers // OLD
 
-// var _Game_Switches_setValue = Game_Switches.prototype.setValue;
-// Game_Switches.prototype.setValue = function(switchId, value) {
-//     _Game_Switches_setValue.call(this, switchId, value);
-//     var scene = SceneManager._scene;
-//     if (scene instanceof Scene_Map && scene._debugLogWindow) {
-//         var currentTime = getCurrentTime();
-//         var switchName = $dataSystem.switches[switchId];
-//         var switchState = value ? "ON" : "OFF";
-//         var logText = currentTime + " [SWITCHER] - " + (switchName ? switchName : "Switch " + switchId) + ": " + switchState;
-//         scene._debugLogWindow.addLine(logText);
-//     }
-    
-// };
+//=============================================================================
+// ** Log watcher's - Switcher Log
+//=============================================================================
 
-// Game switch log // NEW
 var _Game_Switches_setValue = Game_Switches.prototype.setValue;
 
 Game_Switches.prototype.setValue = function(switchId, value) {
@@ -1405,9 +1439,10 @@ Game_Switches.prototype.setValue = function(switchId, value) {
 
 
 
+//=============================================================================
+// ** Log watcher's - Self Switcher log
+//=============================================================================
 
-// NEW self switch logs
-// Override Game_SelfSwitches.prototype.setValue
 var _Game_SelfSwitches_setValue = Game_SelfSwitches.prototype.setValue;
 Game_SelfSwitches.prototype.setValue = function(key, value) {
     var oldValue = this.value(key);  // Get the old value of the self switch
@@ -1460,7 +1495,9 @@ Game_Interpreter.prototype.setup = function(list, eventId) {
 
 
 
-
+//=============================================================================
+// ** Log watcher's - Manual event watchers (+2 script calls)
+//=============================================================================
 
 // Let's assume we have a map to store our events
 Game_Interpreter.prototype._loggedEvents = [];
@@ -1597,8 +1634,11 @@ Game_Interpreter.prototype.commandReturn = function() {
     return result;
 };
 
+//=============================================================================
+// ** Log watcher's - Gold changes
+//=============================================================================
 
-// check Gold changes
+
 
 // Backup original gainGold function
 var _Game_Party_gainGold = Game_Party.prototype.gainGold;
@@ -1630,8 +1670,36 @@ Game_Party.prototype.gainGold = function(amount) {
 };
 
 
+//=============================================================================
+// ** Log watcher's - Steps log
+//=============================================================================
 
-// Event call - levle up / down tracker
+
+// Additional variable to keep track of the last logged step count
+var lastLoggedStepCount = 0;
+
+// Check if the number of steps the player has taken is a multiple of StepsLog
+var _Scene_Map_update = Scene_Map.prototype.update;
+Scene_Map.prototype.update = function() {
+    _Scene_Map_update.call(this); // Call original function
+
+    // Get current step count
+    var currentSteps = $gameParty.steps();
+
+    // Check if currentSteps is a multiple of StepsLog, is greater than 25, and is greater than the last logged step count
+    if (StepsLog > 0 && currentSteps >= 25 && currentSteps % StepsLog == 0 && currentSteps > lastLoggedStepCount) {
+        this._debugLogWindow.addLine(getCurrentTime() + " The player has reached " + currentSteps + " steps");
+
+        // Update the last logged step count
+        lastLoggedStepCount = currentSteps;
+    }
+};
+
+
+//=============================================================================
+// ** Log watcher's - Level Up / DOWN
+//=============================================================================
+
 
 // Override Game_Actor.prototype.changeLevel
 var _Game_Actor_changeLevel = Game_Actor.prototype.changeLevel;
@@ -1674,8 +1742,10 @@ Game_Actor.prototype.levelDown = function() {
     }
 };
 
+//=============================================================================
+// ** Log watcher's - Party Changes
+//=============================================================================
 
-// log the Party changes
 
 var _Game_Party_addActor = Game_Party.prototype.addActor;
 Game_Party.prototype.addActor = function(actorId) {
@@ -1704,67 +1774,9 @@ Game_Party.prototype.removeActor = function(actorId) {
 };
 
 
-// BATTLE LOGS
-
-// Battle start
-var _BattleManager_setup = BattleManager.setup;
-BattleManager.setup = function(troopId, canEscape, canLose) {
-    _BattleManager_setup.call(this, troopId, canEscape, canLose);
-    this._battleStartTime = Date.now(); // Store the current time
-    INDIE.Debugger.isBattleRunning = true;
-};
-
-// Battle end
-var _BattleManager_endBattle = BattleManager.endBattle;
-BattleManager.endBattle = function(result) {
-    _BattleManager_endBattle.call(this, result);
-
-    var EnableBattleLogs = JSON.parse(parameters['EnableBattleLogs'] || 'true');
-
-    // If battle logs are disabled, don't continue with the function.
-    if (!EnableBattleLogs) return;
-    
-    var currentTime = getCurrentTime();
-    var battleDuration = Date.now() - this._battleStartTime; // Calculate battle duration
-    var logText = currentTime;
-
-    INDIE.Debugger._debugLog.addLine("----------------------------------------"); // Add separation line at the start
-
-    // results
-    switch(result) {
-        case 2:
-            logText += " [BATTLE]" + " The battle is over, player lose"; 
-            break;
-        case 0:
-            logText += " [BATTLE]" + " The battle is over, player win";
-            INDIE.Debugger._debugLog.addLine(logText);
-
-            logText = currentTime;
-            logText += " [BATTLE]" + ` The player fought with: ${$gameTroop.troop().name}`; // Write out the name of the Troops
-            INDIE.Debugger._debugLog.addLine(logText);
-
-            $gameTroop.members().forEach(function(enemy) {
-                if (enemy.isDead()) {
-                    logText = currentTime;
-                    logText += " [BATTLE]" + ` The player defeated: ${enemy.name()}`; 
-                    INDIE.Debugger._debugLog.addLine(logText); 
-                }
-            });
-            // Add battle duration
-            logText = currentTime;
-            logText += " [BATTLE]" + ` Battle duration: ${Math.round(battleDuration / 1000)} seconds`;
-            INDIE.Debugger._debugLog.addLine(logText);
-            break;
-        case 1:
-            logText += " [BATTLE]" + "The battle is over, player escaped";
-            break;
-    }
-    // Add log entry
-    // INDIE.Debugger._debugLog.addLine(logText);
-
-    INDIE.Debugger._debugLog.addLine("----------------------------------------"); // Add separation line at the end
-};
-
+//=============================================================================
+// ** Log watcher's - Event erasing
+//=============================================================================
 
 
 // Track event erasing
@@ -1780,30 +1792,66 @@ Game_Event.prototype.erase = function() {
 };
 
 
-// conditional branch condition tracker
+//=============================================================================
+// ** Log watcher's - Show Animation // In progress
+//=============================================================================
 
+// var _Game_CharacterBase_startAnimation = Game_CharacterBase.prototype.startAnimation;
+// Game_CharacterBase.prototype.startAnimation = function(animationId, mirror, delay) {
+//     _Game_CharacterBase_startAnimation.call(this, animationId, mirror, delay); // Call original function
+    
+//     var target;
+//     if (this instanceof Game_Player) {
+//         target = 'Player';
+//     } else if (this instanceof Game_Event) {
+//         target = this.event().name;
+//     } else {
+//         return;
+//     }
+    
+//     var scene = SceneManager._scene;
+//     var animationName = $dataAnimations[animationId] ? $dataAnimations[animationId].name : "ANIMATION NOT EXISTS";
+    
+//     if (scene instanceof Scene_Map && scene._debugLogWindow) {
+//         SceneManager._scene._debugLogWindow.addLine(getCurrentTime() + " Play " + animationName + " animation on " + target);
+//     }
+// };
+
+
+
+//=============================================================================
+// ** Log watcher's - Conditional branch
+//=============================================================================
 
 var _Game_Interpreter_command111 = Game_Interpreter.prototype.command111;
 Game_Interpreter.prototype.command111 = function(params) {
     // Store the original value of this._branch[this._indent]
     var originalBranchResult = this._branch[this._indent];
 
+    // Run the original process first
     _Game_Interpreter_command111.call(this, params);
 
-    // If the condition result is different from the original result, it was evaluated
-    if (this._branch[this._indent] !== originalBranchResult && this._branch[this._indent] === false) {
-        var eventId = this._eventId;
-        var event = $gameMap.event(eventId);
-        var scene = SceneManager._scene;
-        if (scene instanceof Scene_Map && scene._debugLogWindow) {
-            var logText = getCurrentTime() + " " + event.event().name + "(#" + eventId + ") [CONDITIONAL BRANCH] - FALSE";
+    // Run your logics
+    var eventId = this._eventId;
+    var event = $gameMap.event(eventId);
+    var scene = SceneManager._scene;
+    if (scene instanceof Scene_Map && scene._debugLogWindow) {
+        if (this._branch[this._indent] !== originalBranchResult) {
+            var logText = getCurrentTime() + " " + event.event().name + "(#" + eventId + ") [CONDITIONAL BRANCH] - " + (this._branch[this._indent] ? "TRUE" : "FALSE");
             scene._debugLogWindow.addLine(logText);
         }
     }
+
+    // Return to the original process
+    return true;
 };
 
 
-// event movement Log // MOVEMENT ROUTE
+
+//=============================================================================
+// ** Log watcher's - Movement route log
+//=============================================================================
+
 
 var _Game_Event_initialize = Game_Event.prototype.initialize;
 Game_Event.prototype.initialize = function(mapId, eventId) {
@@ -1841,8 +1889,10 @@ Game_Event.prototype.moveStraight = function(d) {
     }
 };
 
+//=============================================================================
+// ** Log watcher's - Var Tracker
+//=============================================================================
 
-// Var Tracker
 // Store the original setValue function
 var _Game_Variables_setValue = Game_Variables.prototype.setValue;
 
@@ -1875,9 +1925,10 @@ Game_Variables.prototype.setValue = function(variableId, value) {
     _Game_Variables_setValue.call(this, variableId, value);
 };
 
+//=============================================================================
+// ** Log watcher's - Teleport log
+//=============================================================================
 
-
-// teleport tracker
 
 var originalCommand201 = Game_Interpreter.prototype.command201;
 var oldMapId, oldMapName;
@@ -1897,8 +1948,6 @@ Game_Interpreter.prototype.command201 = function() {
 
     return true;
 };
-
-
 
 
 var originalUpdate = Scene_Map.prototype.update;
@@ -1956,9 +2005,10 @@ Scene_Map.prototype.update = function() {
     }
 };
 
+//=============================================================================
+// ** Log watcher's - Common event
+//=============================================================================
 
-
-// Keep track of common events
 // only way with little scirpts (so manual)
 
 Game_Interpreter.prototype.logCommonEvent = function(commonEventId) {
@@ -1985,9 +2035,10 @@ Game_Interpreter.prototype.finishCommonEvent = function(commonEventId) {
     }
 };
 
-    // waiting log
-
-
+//=============================================================================
+// ** Log watcher's - Waiting log
+//=============================================================================
+   
     var _Game_Interpreter_updateWait = Game_Interpreter.prototype.updateWait;
     Game_Interpreter.prototype.updateWait = function() {
     var waitingStarted = this._waitCount && !this._prevWaitCount;
@@ -2013,8 +2064,10 @@ Game_Interpreter.prototype.finishCommonEvent = function(commonEventId) {
     return _Game_Interpreter_updateWait.call(this);
 };
     
-// YANFLY QUEST JOURNEY
 
+//=============================================================================
+// ** Log watcher's - YANFLY QUEST JOURNEY
+//=============================================================================
 
 // SUPP ADD AND COMPLETED
 
@@ -2096,7 +2149,7 @@ Game_Interpreter.prototype.argsToString = function(args) {
 
 
 //=============================================================================
-// ** Diables log via script call (in development)
+// ** Dialog log via script call (in development)
 //=============================================================================
 
 
