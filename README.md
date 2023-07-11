@@ -44,7 +44,9 @@ In the second group you can add player (leader) info e.g.: (these are also updat
 * Common event (Still in development) (just need to show, if the event action come from normal, or common event)
 * Erase event
 * Party changed (add / remove)
-* Battle LOG (win/ lose / escaped / defated mobs / battle time)
+* Movement Route (start / end)
+* Conditional Branch (true / false)
+* Repeatable and configurable steps log
 
 There is currently compatibility with one extension:
 
@@ -111,6 +113,19 @@ Currently, information can be printed from a parallel event. But if it is spamme
 
 
 ### Changelog
+
+0.16
+
+* Fixed the **Conditional Branch** log Bug. (cant freeze anymore the game)
+* Removed the Battle logs (It is being redesigned.)
+* Fixed the three player info window position, and fixed the third window battle visibility  bug
+* From now on, when the fight is over and the player has won, the battle does not delete the previous log entries.
+* ----
+* Starter log : Added a new Party player names log, and map tilesets name log
+* NEW configurable Steps log (repeat)
+* NEW ItemEnable log param
+
+
 
 0.15 
 * Refactored the Switcher log. Now better handling, when come the log from paralell or autorun events.
