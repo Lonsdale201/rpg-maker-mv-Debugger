@@ -27,7 +27,7 @@ In the first group you can visually track the changes of 3 items in relatime.
 
 In the second group you can add player (leader) info e.g.: (these are also updated in real time)
 
-**HP / MP / TP / LEVEL / ACTOR NAME / CLASS /**
+**HP / MP / TP / LEVEL / ACTOR NAME / CLASS / MAP NAME**
 
 
 **Event action Track list:**
@@ -46,6 +46,8 @@ In the second group you can add player (leader) info e.g.: (these are also updat
 * Movement Route (start / end)
 * Conditional Branch (true / false)
 * Repeatable and configurable steps log
+* Change tilesets
+* Selected Choices
 
 There is currently compatibility with one extension:
 
@@ -78,6 +80,8 @@ The Starter returns the following data (this is from the player + track):
 * Encounters on the track
 * How many people are in the party
 * How much gold the player has
+* Tileset name
+* Activated plugins number
 
 ![image](https://github.com/Lonsdale201/rpg-maker-mv-Debugger/assets/23199033/67cba9ba-c6ff-448b-bc8a-8a1a6ddb71bc)
 
@@ -112,6 +116,19 @@ Currently, information can be printed from a parallel event. But if it is spamme
 
 
 ### Changelog
+
+0.17
+
+* Better Logs Commenting separators
+* We tried to fix the line break 
+* Removed the mapID from the log, when player teleporting.
+* Fixed the teleport log bug, 
+* now there is no problem with keys not working in the Show Choices
+* Fixed the Questlog param
+* **NEW** Mapname displaying in the first(#1) Playerinfo modal window
+* **NEW** Show Choice - selected Choice log
+* **NEW** Starter log include Activated plugins number
+* **NEW** Change tilesets logs
 
 0.16
 
