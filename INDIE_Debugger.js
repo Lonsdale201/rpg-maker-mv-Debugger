@@ -33,6 +33,8 @@
 *               Movement Route
 *               Conditional Branch
 *               Steps Log
+*               Change tilesets
+*               Selected Choices
 *               Quest Jorunay (Yanfly)
 *
 * Quest Journay supported logs: Plugin commands only: Only support Quest
@@ -42,6 +44,18 @@
 *
 * Changelog
 *
+* 0.17
+* 
+* Better Logs Commenting separators
+* We tried to fix the line break 
+* Removed the mapID from the log, when player teleporting.
+* NEW Show Choice - selected Choice log
+* NEW Starter log include Activated plugins number
+* NEW Change tilesets logs
+* Fixed the teleport log bug, 
+* now there is no problem with keys not working in the Show Choices
+* NEW Mapname displaying in the first(#1) Playerinfo modal window
+*
 * 0.16
 * Fixed the Conditional Branch log Bug. (cant freeze anymore the game)
 * Removed the Battle logs (It is being redesigned.)
@@ -50,8 +64,12 @@
 * From now on, when the fight is over and the player has won,
 * the battle does not delete the previous log entries.
 * Starter log : Added a new Party player names log, and map tilesets name log
+* 
 * NEW configurable Steps log (repeat)
 * NEW ItemEnable log param
+* NEW Tileset Change log
+* New Map name for the (#1)FirstPlayer info window
+*
 * /=====================================================================/
 *
 * 0.15 
@@ -229,6 +247,9 @@
 * @value PlayerLevel
 * @option Player Class
 * @value PlayerClass
+* @option Map Name
+* @value MapName
+*
 * @parent Modal Window Group #2
 *
 * @param PlayerInfo2
@@ -264,6 +285,9 @@
 * @option Player Class
 * @value PlayerClass
 * @parent Modal Window Group #2 
+*
+* @param Milestones Logs
+* 
 */
 
 var INDIE = INDIE || {};
@@ -533,9 +557,10 @@ Window_PlayerInfo1.prototype = Object.create(Window_Base.prototype);
 Window_PlayerInfo1.prototype.constructor = Window_PlayerInfo1;
 
 Window_PlayerInfo1.prototype.initialize = function() {
+    this._mapName = $dataMapInfos[$gameMap._mapId].name;
     this._playerName = $gameParty.leader().name();
     this._playerHP = $gameParty.leader().hp;
-    this._playerClass = $gameParty.leader().currentClass().name;  // Új változó
+    this._playerClass = $gameParty.leader().currentClass().name; 
     var width = this.windowWidth();
     var height = this.windowHeight();
     var x = Graphics.boxWidth - 450; 
@@ -558,6 +583,9 @@ Window_PlayerInfo1.prototype.refresh = function() {
     if (PlayerInfo1 == "PlayerName") {
         this.contents.fontSize = 15;
         this.drawText($gameParty.leader().name(), 0, -10, this.contentsWidth(), 'left');
+    } else if (PlayerInfo1 == "MapName") {
+        this.contents.fontSize = 15;
+        this.drawText("Map: " + $dataMapInfos[$gameMap._mapId].name, 0, -10, this.contentsWidth(), 'left');
     } else if (PlayerInfo1 == "PlayerHP") {
         this.contents.fontSize = 15;
         this.drawText("HP: " + $gameParty.leader().hp, 0, -10, this.contentsWidth(), 'left');
@@ -585,6 +613,9 @@ Window_PlayerInfo1.prototype.update = function() {
         this.refresh();
     } else if (PlayerInfo1 == "PlayerHP" && this._playerHP !== $gameParty.leader().hp) {
         this._playerHP = $gameParty.leader().hp;
+        this.refresh();
+    } else if (PlayerInfo1 == "MapName" && this._mapName !== $dataMapInfos[$gameMap._mapId].name) {
+        this._mapName = $dataMapInfos[$gameMap._mapId].name;
         this.refresh();
     } else if (PlayerInfo1 == "PlayerMP" && this._playerMP !== $gameParty.leader().mp) {  // refreshing
         this._playerMP = $gameParty.leader().mp;
@@ -990,7 +1021,7 @@ Window_DebugLog.prototype.update = function() {
     } else {
         this.show(); // show the window if there's no dialogue and no battle
     }
-    this.keyInput(); // add this here
+    this.keyInput(); 
 };
 
 Window_StepCounter.prototype.update = function() {
@@ -1102,6 +1133,9 @@ Window_PlayerInfo1.prototype.update = function() {
         } else if (PlayerInfo1 == "PlayerLevel" && this._playerLevel !== $gameParty.leader().level) {  
             this.contents.fontSize = 15;
             this.drawText("P Level: " + $gameParty.leader().level, 0, -10, this.contentsWidth(), 'left');
+        } else if (PlayerInfo1 == "MapName" && this._mapName !== $dataMapInfos[$gameMap._mapId].name) {  
+            this._mapName = $dataMapInfos[$gameMap._mapId].name;
+            this.refresh();
         }
         if(INDIE.Debugger.isBattleRunning) {
             this.hide(); 
@@ -1112,6 +1146,7 @@ Window_PlayerInfo1.prototype.update = function() {
         this.hide();
     }
 };
+
 
 Window_PlayerInfo2.prototype.update = function() {
     Window_Base.prototype.update.call(this);
@@ -1240,7 +1275,6 @@ Window_DebugLog.prototype.drawTextExWithFontSize = function(text, x, y, maxWidth
 
 
 
-
 Window_DebugLog.prototype.drawItem = function(index) {
     var rect = this.itemRectForText(index);
     this.contents.fontSize = 16;
@@ -1249,11 +1283,15 @@ Window_DebugLog.prototype.drawItem = function(index) {
     // Reduce the y value to move the text up
     rect.y -= 20;
 
-    for (let text of lines) {
-        rect.y = this.drawTextExWithFontSize(text, rect.x, rect.y, rect.width);
+    for (let i = 0; i < lines.length; i++) {
+        let text = lines[i];
+        let y = rect.y + i * this.itemHeight(); // update the y coordinate for each line
+        this.drawTextExWithFontSize(text, rect.x, y, rect.width);
         rect.x = 0;
     }
 };
+
+
 
 
 Window_DebugLog.prototype.addLine = function(text) {
@@ -1267,8 +1305,10 @@ Window_DebugLog.prototype.addLine = function(text) {
         }
     }
 
+    let linesAdded = 0;  // Keep track of the number of lines added
     for (let line of lines) {
         this._log.push([line]);
+        linesAdded += 1;  // Increase the count for each line added
     }
 
     INDIE.Debugger.logData = this._log; 
@@ -1278,8 +1318,10 @@ Window_DebugLog.prototype.addLine = function(text) {
         this.opacity = 255;
     }
     this.refresh();
-    this.setTopRow(Math.max(0, this._log.length - this.maxPageItems()));
+    // Now use the count of lines added to correctly set the top row
+    this.setTopRow(Math.max(0, this._log.length - this.maxPageItems() + linesAdded - 1));
 };
+
 
 // message hides triggers
 const _Window_Message_startMessage = Window_Message.prototype.startMessage;
@@ -1357,11 +1399,6 @@ Window_DebugLog.prototype.keyInput = function() {
 //=============================================================================
 
 // startervar param
-//=============================================================================
-// ** Log watcher's - STARTER LOGS
-//=============================================================================
-
-// startervar param
 var gameHasStartedVariableId = StarterVariable;
 
 var _Scene_Map_start = Scene_Map.prototype.start;
@@ -1375,6 +1412,13 @@ Scene_Map.prototype.start = function() {
         var separator = getCurrentTime() + " ----------------------------------------";
         this._debugLogWindow.addLine(separator);
         this._debugLogWindow.addLine(getCurrentTime() + " GAME STARTED");
+
+        var activePlugins = $plugins.filter(function(plugin) {
+            return plugin.status;
+        });
+        var activePluginCount = activePlugins.length;
+        this._debugLogWindow.addLine(getCurrentTime() + " Loaded, and activated plugins: " + activePluginCount);
+
         this._debugLogWindow.addLine(separator);
 
         var partySize = $gameParty.size();
@@ -1697,6 +1741,54 @@ Scene_Map.prototype.update = function() {
 
 
 //=============================================================================
+// ** Log watcher's - Choice log
+//=============================================================================
+
+var _Game_Interpreter_setupChoices = Game_Interpreter.prototype.setupChoices;
+var _Game_Interpreter_command402 = Game_Interpreter.prototype.command402;
+
+Game_Interpreter.prototype.setupChoices = function(params) {
+    this._choicesLog = params[0].slice();
+    _Game_Interpreter_setupChoices.call(this, params);
+};
+
+Game_Interpreter.prototype.command402 = function() {
+    if (this._choicesLog) {
+        var logText = getCurrentTime() + " [CHOICE] - " + this._choicesLog[this._branch[this._indent]];
+        if (SceneManager._scene._debugLogWindow) {
+            SceneManager._scene._debugLogWindow.addLine(logText);
+        }
+        this._choicesLog = null; // töröljük a logot a választás után
+    }
+    _Game_Interpreter_command402.call(this);
+    return true;
+};
+
+//=============================================================================
+// ** Log watcher's - Change Tilesets log
+//=============================================================================
+
+var _Game_Interpreter_command282 = Game_Interpreter.prototype.command282;
+Game_Interpreter.prototype.command282 = function() {
+    var newTilesetId = this._params[0];
+    var newTilesetName = $dataTilesets[newTilesetId].name;
+
+    // If the scene is a map and has a debug log window, log the tileset change
+    var scene = SceneManager._scene;
+    if (scene instanceof Scene_Map && scene._debugLogWindow) {
+        if (!this._tilesetChangeLogged || this._tilesetChangeLogged !== newTilesetId) {
+            var logText = getCurrentTime() + " TILESET CHANGED TO: " + newTilesetName;
+            scene._debugLogWindow.addLine(logText);
+            this._tilesetChangeLogged = newTilesetId;
+        }
+    }
+
+    // Execute the original command282 function (change tileset)
+    return _Game_Interpreter_command282.call(this);
+};
+
+
+//=============================================================================
 // ** Log watcher's - Level Up / DOWN
 //=============================================================================
 
@@ -1786,7 +1878,7 @@ Game_Event.prototype.erase = function() {
     
     var scene = SceneManager._scene;
     if (scene instanceof Scene_Map && scene._debugLogWindow) {
-        var logText = getCurrentTime() + "[" + this.event().name + " #" + this._eventId + " deleted";
+        var logText = getCurrentTime() + " " + this.event().name + " (#" + this._eventId + ") deleted";
         scene._debugLogWindow.addLine(logText);
     }
 };
@@ -1796,26 +1888,6 @@ Game_Event.prototype.erase = function() {
 // ** Log watcher's - Show Animation // In progress
 //=============================================================================
 
-// var _Game_CharacterBase_startAnimation = Game_CharacterBase.prototype.startAnimation;
-// Game_CharacterBase.prototype.startAnimation = function(animationId, mirror, delay) {
-//     _Game_CharacterBase_startAnimation.call(this, animationId, mirror, delay); // Call original function
-    
-//     var target;
-//     if (this instanceof Game_Player) {
-//         target = 'Player';
-//     } else if (this instanceof Game_Event) {
-//         target = this.event().name;
-//     } else {
-//         return;
-//     }
-    
-//     var scene = SceneManager._scene;
-//     var animationName = $dataAnimations[animationId] ? $dataAnimations[animationId].name : "ANIMATION NOT EXISTS";
-    
-//     if (scene instanceof Scene_Map && scene._debugLogWindow) {
-//         SceneManager._scene._debugLogWindow.addLine(getCurrentTime() + " Play " + animationName + " animation on " + target);
-//     }
-// };
 
 
 
@@ -1926,7 +1998,7 @@ Game_Variables.prototype.setValue = function(variableId, value) {
 };
 
 //=============================================================================
-// ** Log watcher's - Teleport log
+// ** Log watcher's - Teleport log  
 //=============================================================================
 
 
@@ -1936,74 +2008,63 @@ var newMapId, newMapName;
 var isTeleporting = false;
 
 Game_Interpreter.prototype.command201 = function() {
-    // Először elmentjük az eredeti helyet
     oldMapId = $gameMap.mapId();
     oldMapName = $dataMapInfos[oldMapId].name;
  
-    // Majd meghívjuk az eredeti teleport parancsot
     originalCommand201.call(this);
     
-    // Jelöljük, hogy teleportálás folyamatban
     isTeleporting = true;
 
     return true;
 };
 
-
 var originalUpdate = Scene_Map.prototype.update;
 
 Scene_Map.prototype.update = function() {
+    // Itt hívjuk meg először az eredeti update függvényt
     originalUpdate.call(this);
 
-    Scene_Base.prototype.update.call(this);
-
     $gameMap.events().forEach(function(event) {
-        // Check if the interpreter of the event exists and if it has the logEvent function
         if (event._interpreter && typeof event._interpreter.logEvent === "function") {
             event._interpreter.logEvent(event.eventId());
         }
 
-        // Check and log event ends
         if (event._interpreter && typeof event._interpreter.checkAndLogEventEnds === "function") {
             event._interpreter.checkAndLogEventEnds();
         }
     }, this);
 
-    // Ha teleportálás folyamatban, és a játékos már az új helyen van
     if (isTeleporting && $gameMap.mapId() !== oldMapId) {
-        // Elmentjük az új helyet
         newMapId = $gameMap.mapId();
         newMapName = $dataMapInfos[newMapId].name;
 
-        // Csak akkor logoljuk, ha az új térképadatok már be vannak töltve
         if (newMapName) {
-            // Végül hozzáadjuk a log bejegyzést
-            var logText = getCurrentTime() + " Teleport from " + oldMapName + "(" + oldMapId + ")" +
-                          " to " + newMapName + "(" + newMapId + ")";
+            var logText = getCurrentTime() + " Teleport from " + oldMapName + 
+                          " to " + newMapName;
             if (this._debugLogWindow) {
                 this._debugLogWindow.addLine(logText);
             }
 
-            // Teleportálás vége
             isTeleporting = false;
         }
     }
 
-    // Get the current game interpreter
     var gameInterpreter = $gameMap._interpreter;
 
-    // Only proceed if the gameInterpreter exists
     if (gameInterpreter) {
-        // Get the current time in seconds
         var currentTimeInSeconds = Math.floor(Date.now() / 1000);
 
-        // Only call checkRunningEvents every second
         if (!this._lastCheckTime || currentTimeInSeconds > this._lastCheckTime) {
             gameInterpreter.checkRunningEvents();
             this._lastCheckTime = currentTimeInSeconds;
         }
     }
 };
+
+
+
+
+
 
 //=============================================================================
 // ** Log watcher's - Common event
@@ -2082,7 +2143,8 @@ Game_Interpreter.prototype.pluginCommand = function(command, args) {
     if (typeof $gameSystem.isShowQuest === "function" &&
         typeof $gameSystem.isEnableQuest === "function" &&
         $gameSystem.isShowQuest() && 
-        $gameSystem.isEnableQuest()) {
+        $gameSystem.isEnableQuest() &&
+        EnableQuestLog) {
         // Check if the command is "QUEST"
         if (command.toUpperCase() === "QUEST" && args.length > 0) {
             var argString = this.argsToString(args);
@@ -2258,5 +2320,8 @@ Scene_Map.prototype.createEventLabels = function() {
         }, this);
     }, this);
 };
+
+
+
 
 })(INDIE.Debugger);
