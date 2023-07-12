@@ -53,6 +53,7 @@
 * NEW Starter log include Activated plugins number
 * NEW Change tilesets logs
 * Fixed the teleport log bug, 
+* Fixed the Questlog param
 * now there is no problem with keys not working in the Show Choices
 * NEW Mapname displaying in the first(#1) Playerinfo modal window
 *
