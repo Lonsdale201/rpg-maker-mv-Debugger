@@ -44,6 +44,10 @@
 *
 * Changelog
 *
+* 0.17.1
+*
+* Removed the event id form the logs when using the manual scripts (page changes)
+*
 * 0.17
 * 
 * Better Logs Commenting separators
@@ -53,8 +57,8 @@
 * NEW Starter log include Activated plugins number
 * NEW Change tilesets logs
 * Fixed the teleport log bug, 
-* Fixed the Questlog param
 * now there is no problem with keys not working in the Show Choices
+* Fixed the Questlog param
 * NEW Mapname displaying in the first(#1) Playerinfo modal window
 *
 * 0.16
@@ -68,8 +72,6 @@
 * 
 * NEW configurable Steps log (repeat)
 * NEW ItemEnable log param
-* NEW Tileset Change log
-* New Map name for the (#1)FirstPlayer info window
 *
 * /=====================================================================/
 *
@@ -1512,8 +1514,8 @@ Game_SelfSwitches.prototype.setValue = function(key, value) {
                 var newPageId = event.findProperPageIndex() + 1; // +1 for RPG Maker's 1-based indexing
                 var switchState = value ? "Enabled" : "Disabled"; // Get the state of the switch
         
-                var logText1 = getCurrentTime() + " " + event.event().name + "(#" + eventId + ") [SELF](" + selfSwitchId + ") " + switchState;
-                var logText2 = getCurrentTime() + " " + event.event().name + "(#" + eventId + ")" + " Page changed from (" + oldPageId + ") to (" + newPageId + ")";
+                var logText1 = getCurrentTime() + " " + event.event().name + " [SELF](" + selfSwitchId + ") " + switchState;
+                var logText2 = getCurrentTime() + " " + event.event().name  + " Page changed from (" + oldPageId + ") to (" + newPageId + ")";
                 scene._debugLogWindow.addLine(logText1);
                 scene._debugLogWindow.addLine(logText2);
                 
