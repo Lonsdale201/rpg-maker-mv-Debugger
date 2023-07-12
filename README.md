@@ -64,6 +64,8 @@ For objective performances, a trimming technique is still being developed, as it
 
 Sample:
 ![image](https://github.com/Lonsdale201/rpg-maker-mv-Debugger/assets/23199033/98fd7e7c-80c0-4bc6-8291-0b1fc4ec8b98)
+![image](https://github.com/Lonsdale201/rpg-maker-mv-Debugger/assets/23199033/e3bea308-4c0a-42e2-9b49-706dcdc3b757)
+
 
 
 Unfortunately, you have to set it for each page if you want to use it.
@@ -116,6 +118,9 @@ Currently, information can be printed from a parallel event. But if it is spamme
 
 
 ### Changelog
+
+0.17.1
+Removed the event id form the logs when using the manual scripts (page changes)
 
 0.17
 
