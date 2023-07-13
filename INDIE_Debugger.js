@@ -6,6 +6,7 @@
 * @plugindesc Debugger plugin
 * @author Soczó Kristóf
 * @help
+* 
 * /=====================================================================/
 * Useful tool for debug your project visually when running the game
 * /=====================================================================/
@@ -14,7 +15,8 @@
 * 
 * Script commands:
 *
-* this.logCommonEvent(n) change the n with your common event id. At the MOMENT NOT RECOMMENDED TO USE STILL IN DEVELOPMENT
+* this.logCommonEvent(n) change the n with your common event id. 
+* this.finishCommonEvent(2)  change the n with your common event id. Place this the last item in the common event action list.
 * this.logEvent(this._eventId); will print the event name  // Use this if you need a better Hierarchical display
 * this.finishEvent(this._eventId); will print if the event finished   // Use this if you need a better Hierarchical display
 * this.createEventLabel(1, "Hello World", "red"); // make a tag for your events ( only display when running the game)
@@ -36,7 +38,10 @@
 *               Change tilesets
 *               Selected Choices
 *               Change Xp's (not battles)
+*               Items used in the menu (multiple support)
+*               Region movement 
 *               Quest Jorunay (Yanfly)
+*               RegionEvents (Yanfly)
 *
 * Quest Journay supported logs: Plugin commands only: Only support Quest
 * (and not objectives)
@@ -44,6 +49,16 @@
 * Note that this monitors the running of the plugin command.
 *
 * Changelog
+*
+* 0.18.0
+*
+* New Plugin Compatibility: Yanfly RegionEvents
+* NEW Region Logs
+* Region logs enable / disable param
+* NEW Item used log (Only if item used on the menu screen support multiple items in a same time)
+* Param to enable / disable item used logs
+* New Common event manual tracker (just like the event) -
+* New script call : this.finishCommonEvent(n)
 *
 * 0.17.5
 * 
@@ -53,6 +68,7 @@
 * NEW Player logs - Change Xp 
 *
 * /=====================================================================/
+*
 * 0.17.1
 *
 * Removed the event id form the logs when using the manual scripts (page changes)
@@ -159,13 +175,6 @@
 * @default true
 * @desc enable or dsiable the Smart fade function.
 *
-* @param EnableParalellRunningLog
-* @text Enable Paralell Log
-* @parent --Windows--
-* @type boolean
-* @default false
-* @desc still in development...
-*
 * @param --Logs--
 *
 * @param EnableQuestLog
@@ -231,6 +240,13 @@
 * @default true
 * @desc enable or disable the Waiting command log
 *
+* @param EnableRegionLogs
+* @text Region Logs
+* @parent --Logs--
+* @type boolean
+* @default true
+* @desc enable or disable the region logs (entered / left)
+*
 * @param StepsLog
 * @text Steps log
 * @parent --Logs--
@@ -246,6 +262,13 @@
 * @type boolean
 * @default true
 * @desc Enable or disable the logs for the xp changes
+*
+* @param ItemUsedLog
+* @text Item Used Logs
+* @parent --PlayerLogs--
+* @type boolean
+* @default true
+* @desc Enable or disable the logs if the player using item(s) in the Menu screen
 *
 * @param --Modal Window Group #1--
 *
@@ -365,6 +388,9 @@ INDIE.Debugger = INDIE.Debugger || {};
     var EnableMoveMentLog = JSON.parse(parameters['EnableMoveMentLog'] || 'true');
     var EnableItemLog = JSON.parse(parameters['EnableItemLog'] || 'true');
     var EnableWaitingLog = JSON.parse(parameters['EnableWaitingLog'] || 'true');
+    var EnableRegionLogs = JSON.parse(parameters['EnableRegionLogs'] || 'true');
+
+
 
     var StarterVariable = Number(parameters['StarterVariable'] || '2');
     var StepsLog = Number(parameters['StepsLog'] || '100');
@@ -372,6 +398,8 @@ INDIE.Debugger = INDIE.Debugger || {};
     // Player logs
     
     var XpChangedLogs = JSON.parse(parameters['XpChangedLogs'] || 'true');
+    var ItemUsedLog = JSON.parse(parameters['ItemUsedLog'] || 'true');
+    
 
 
     var logScrollUpKey = parameters['LogWindowScrollUp'] || 'y'; // Default 'y'
@@ -406,6 +434,8 @@ INDIE.Debugger = INDIE.Debugger || {};
     // check dialogs & battle
     INDIE.Debugger.isDialogueRunning = false;
     INDIE.Debugger.isBattleRunning = false;
+  
+    var lastUsedItemsLog = []; 
 
     INDIE.Debugger.logWindowVisible = true;
     var logWindowToggleKey = parameters['LogWindowToggle'] || 'f';
@@ -1466,7 +1496,6 @@ Scene_Title.prototype.start = function() {
 
 
 Window_DebugLog.prototype.clear = function() {
-    console.trace("Window_DebugLog clear method called");
     this._log = [];
     this.refresh();
 };
@@ -1535,7 +1564,7 @@ Scene_Map.prototype.start = function() {
         var tilesetId = $dataMap.tilesetId;
         var tilesetName = $dataTilesets[tilesetId].name;
         this._debugLogWindow.addLine(getCurrentTime() + " LOADED TILESET: " + tilesetName);
-
+        
         var goldName = TextManager.currencyUnit;
         var goldAmount = $gameParty.gold();
         this._debugLogWindow.addLine(getCurrentTime() + " Current " + goldName + " amount: " + goldAmount);
@@ -1797,9 +1826,9 @@ Game_Party.prototype.gainGold = function(amount) {
             var currentTime = getCurrentTime();
             var logText = currentTime;
             if(newGold > oldGold){
-                logText += "[GOLD]" + " + " + (newGold - oldGold) + " " + TextManager.currencyUnit + " gained";
+                logText += " [GOLD]" + " + " + (newGold - oldGold) + " " + TextManager.currencyUnit + " gained";
             } else {
-                logText += "[GOLD]" + " - " + (oldGold - newGold) + " " + TextManager.currencyUnit + " removed";
+                logText += " [GOLD]" + " - " + (oldGold - newGold) + " " + TextManager.currencyUnit + " removed";
             }
             scene._debugLogWindow.addLine(logText);
         }
@@ -1826,6 +1855,13 @@ var lastLoggedStepCount = 0;
 var _Scene_Map_update = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     _Scene_Map_update.call(this); // Call original function
+
+    if (this._debugLogWindow && ItemUsedLog && lastUsedItemsLog.length > 0) { // Check if ItemUsedLog is true
+        for (var i = 0; i < lastUsedItemsLog.length; i++) {
+            this._debugLogWindow.addLine(lastUsedItemsLog[i]);
+        }
+        lastUsedItemsLog = []; // Clear the array after adding logs to the window
+    }
     // log window toggle process
     this.processLogToggle();
     // Get current step count
@@ -1887,6 +1923,45 @@ Game_Interpreter.prototype.command282 = function() {
     // Execute the original command282 function (change tileset)
     return _Game_Interpreter_command282.call(this);
 };
+
+//=============================================================================
+// ** Log watcher's - Region ID logs
+//=============================================================================
+
+var _Game_Player_moveStraight = Game_Player.prototype.moveStraight;
+Game_Player.prototype.moveStraight = function(d) {
+    _Game_Player_moveStraight.call(this, d); // Call original function
+
+    // Only proceed if player has moved successfully
+    if (this.isMovementSucceeded() && EnableRegionLogs) {
+        var x = this._x;
+        var y = this._y;
+        var newRegionId = $gameMap.regionId(x, y);
+
+        // If the region has changed, add log entry
+        if (this.currentRegionId !== newRegionId) {
+            var scene = SceneManager._scene;
+
+            // Check if the current scene is Scene_Map and it contains _debugLogWindow
+            if (scene instanceof Scene_Map && scene._debugLogWindow) {
+                if (newRegionId > 0) {
+                    var logText = getCurrentTime() + " ENTERED REGION: " + newRegionId;
+                    scene._debugLogWindow.addLine(logText);
+                } else if (this.currentRegionId !== undefined) {
+                    var logText = getCurrentTime() + " NO LONGER ANY REGION";
+                    scene._debugLogWindow.addLine(logText);
+                }
+            }
+
+            // Update the player's current region ID
+            this.currentRegionId = newRegionId;
+        }
+    }
+};
+
+
+
+
 
 //=============================================================================
 // ** PLAYERS LOGS
@@ -1992,8 +2067,22 @@ Game_Interpreter.prototype.command315 = function() {
 
 
 //=============================================================================
-// ** Log watcher's - Change hp from event
+// ** Log watcher's - Used items log
 //=============================================================================
+
+
+var _Scene_ItemBase_useItem = Scene_ItemBase.prototype.useItem;
+Scene_ItemBase.prototype.useItem = function() {
+    _Scene_ItemBase_useItem.call(this);
+    var item = this.item();
+    if (ItemUsedLog && DataManager.isItem(item) && this.user().canUse(item)) { // Check if ItemUsedLog is true
+        var target = this.user();
+        var currentTime = getCurrentTime();
+        lastUsedItemsLog.push(currentTime + " " + item.name + " used on " + target.name()); // Add log to the array instead of a single variable
+    }
+};
+
+
 
 //=============================================================================
 // ** Log watcher's - Party Changes
@@ -2238,22 +2327,27 @@ Game_Interpreter.prototype.logCommonEvent = function(commonEventId) {
     var scene = SceneManager._scene;
     if (scene instanceof Scene_Map && scene._debugLogWindow) {
         var currentTime = getCurrentTime();
+        
+        // Add separator line
+        scene._debugLogWindow.addLine(currentTime + " ------------------------------------");
+
         var logText = currentTime + " [COMMON EVENT] " + commonEvent.name + "(#"+ commonEventId + ") RUNNING";
         scene._debugLogWindow.addLine(logText);
     }
 };
 
-// manual track when the CM finished.
+// finished
 Game_Interpreter.prototype.finishCommonEvent = function(commonEventId) {
     var commonEvent = $dataCommonEvents[commonEventId];
     var scene = SceneManager._scene;
     if (scene instanceof Scene_Map && scene._debugLogWindow) {
         var currentTime = getCurrentTime();
-        var logText = currentTime + " [COMMON EVENT] " + commonEvent.name + "(#"+ commonEventId + ") FINISHED";
-        scene._debugLogWindow.addLine(logText);
 
         // Add separator line
         scene._debugLogWindow.addLine(currentTime + " ------------------------------------");
+
+        var logText = currentTime + " [COMMON EVENT] " + commonEvent.name + "(#"+ commonEventId + ") FINISHED";
+        scene._debugLogWindow.addLine(logText);
     }
 };
 
@@ -2372,6 +2466,41 @@ Game_Interpreter.prototype.argsToString = function(args) {
     return str.trim();
 };
 
+
+
+//=============================================================================
+// ** Log watcher's - YANFLY Region Events
+//=============================================================================
+
+var _Game_Temp_reserveCommonEvent = Game_Temp.prototype.reserveCommonEvent;
+
+Game_Temp.prototype.reserveCommonEvent = function(commonEventId) {
+    // Check if Yanfly RegionEvent plugin is active
+    var pluginName = 'YEP_RegionEvents';
+    var pluginStatus = false;
+    
+    for (var i = 0; i < $plugins.length; i++) {
+        if ($plugins[i].name === pluginName) {
+            pluginStatus = $plugins[i].status;
+            break;
+        }
+    }
+
+    if (pluginStatus) {
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var currentTime = getCurrentTime();
+            var commonEventName = $dataCommonEvents[commonEventId].name;
+            // Get the current region ID
+            var regionId = $gameMap.regionId($gamePlayer.x, $gamePlayer.y);
+            var logText = currentTime + " [REGION:" + regionId + "]" + " activated " + "[CM]" + commonEventName;
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+    
+    // Call the original reserveCommonEvent function
+    _Game_Temp_reserveCommonEvent.call(this, commonEventId);
+};
 
 //=============================================================================
 // ** Dialog log via script call (in development)
