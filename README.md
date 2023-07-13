@@ -49,8 +49,12 @@ In the second group you can add player (leader) info e.g.: (these are also updat
 * Change tilesets
 * Selected Choices
 * Change XP (by event)
+* Items used in the menu (multiple support)
+* Region Movement (entered / left)
+* Yanfly Region Events
+* Yanfly Quest Journey
 
-There is currently compatibility with one extension:
+There is currently compatibility with two extension:
 
 **Yanfly Quest Journey:**
 
@@ -58,10 +62,16 @@ Supported logs: plugin commands only: Completed, Added ( all three types: single
 
 For objective performances, a trimming technique is still being developed, as it is not advisable to add too long entries, and the names of the objectives can be long.
 
+**Yanfly RegionEvents**
+
 **Precise manual event tracking (with end and start signals):**
 
 **this.logEvent(this._eventId)** you need to call this at the top of your event page.
 **this.finishEvent(this._eventId);** and this to the bottom of your event page.
+
+** Similar system with the Common events:
+**this.logCommonEvent(n)** -- Change the N with your common event ID (place this script call top of your common event page)
+**this.finishCommonEvent(n)** -- Change the N with your common event ID (place this script call bottom of your common event page as !last action)
 
 Sample:
 ![image](https://github.com/Lonsdale201/rpg-maker-mv-Debugger/assets/23199033/98fd7e7c-80c0-4bc6-8291-0b1fc4ec8b98)
@@ -113,13 +123,21 @@ The one is the ID of the event, and you can give the text a coloring if you like
 
 Autorun and Paralell events cannot currently be manually tracked properly. Here I am mainly working on finding an optimized solution for logging them.
 
-For the Common event, there is already a partially developed watcher. It would obviously be useful to know if a switch was activated by a Common event or vice versa. 
-
 It is a high priority to complete this function.
 Currently, information can be printed from a parallel event. But if it is spammed, performance problems can occur, as it will keep trying to log (these are usually rare, but can happen)
 
 
 ### Changelog
+
+0.18.0
+
+* New Plugin Compatibility: Yanfly RegionEvents
+* NEW Region Logs
+* Region logs enable / disable param
+* NEW Item used log (Only if item used on the menu screen support multiple items in a same time)
+* Param to enable / disable item used logs
+* New Common event manual tracker (just like the event) -
+* New script call : this.finishCommonEvent(n)
 
 0.17.5
 
