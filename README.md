@@ -48,6 +48,7 @@ In the second group you can add player (leader) info e.g.: (these are also updat
 * Repeatable and configurable steps log
 * Change tilesets
 * Selected Choices
+* Change XP (by event)
 
 There is currently compatibility with one extension:
 
@@ -92,6 +93,7 @@ One of the challenges of the logging window was solving the line break. It will 
 The log window is scrollable, for which you can set two keyboard shortcuts.
 
 In addition, there is a Smartfade technique that fades the window itself after 5 seconds of inactivity (texts are not affected)
+You can define a key to toggle the window log visibility
 
 You can turn this feature off.
 
@@ -119,7 +121,15 @@ Currently, information can be printed from a parallel event. But if it is spamme
 
 ### Changelog
 
+0.17.5
+
+* **NEW** you can define a key to toggle the log window visibility
+* Enable / Disable Switcher log param
+* Enable / Disable the Waiting Logs param
+* NEW Player logs - Change Xp 
+
 0.17.1
+
 Removed the event id form the logs when using the manual scripts (page changes)
 
 0.17
