@@ -19,7 +19,7 @@
 * this.finishEvent(this._eventId); will print if the event finished   // Use this if you need a better Hierarchical display
 * this.createEventLabel(1, "Hello World", "red"); // make a tag for your events ( only display when running the game)
 * 
-* Track list:   Switcher state
+* Track list:   Switcher state (range not supported)
 *               Self Switch State
 *               Variables changes
 *               Level up / Down (both manual, and automatically)
@@ -35,6 +35,7 @@
 *               Steps Log
 *               Change tilesets
 *               Selected Choices
+*               Change Xp's (not battles)
 *               Quest Jorunay (Yanfly)
 *
 * Quest Journay supported logs: Plugin commands only: Only support Quest
@@ -44,12 +45,21 @@
 *
 * Changelog
 *
+* 0.17.5
+* 
+* NEW you can define a key to toggle the log window visibility
+* Enable / Disable Switcher log param
+* Enable / Disable the Waiting Logs param
+* NEW Player logs - Change Xp 
+*
+* /=====================================================================/
 * 0.17.1
 *
 * Removed the event id form the logs when using the manual scripts (page changes)
 *
-* 0.17
+* 0.17.0
 * 
+*
 * Better Logs Commenting separators
 * We tried to fix the line break 
 * Removed the mapID from the log, when player teleporting.
@@ -61,7 +71,8 @@
 * Fixed the Questlog param
 * NEW Mapname displaying in the first(#1) Playerinfo modal window
 *
-* 0.16
+* 0.16.0
+*
 * Fixed the Conditional Branch log Bug. (cant freeze anymore the game)
 * Removed the Battle logs (It is being redesigned.)
 * Fixed the three player info window position, and fixed the 
@@ -75,7 +86,7 @@
 *
 * /=====================================================================/
 *
-* 0.15 
+* 0.15.0
 *
 * Refactored the Switcher log system (now better handling / 
 * performance and bypass the autorun and paralell spam)
@@ -90,147 +101,184 @@
 *
 * /=====================================================================/
 *
-* @param Windows
+* @param --Windows--
 *
 * @param EnableGoldWindow
 * @text Show the Gold Window
-* @parent Windows
+* @parent --Windows--
 * @type boolean
 * @default true
 * @desc enable or display to display the gold window
 *
 * @param EnableGameTimeWindow
 * @text Show the Game Time Window
-* @parent Windows
+* @parent --Windows--
 * @type boolean
 * @default true
 * @desc enable or display to display the game time window
 *
 * @param EnableStepCounterWIndow
 * @text Step Counter Window
-* @parent Windows
+* @parent --Windows--
 * @type boolean
 * @default true
 * @desc enable or dsiable the Step Counter window
 *
 * @param EnableLogWindow
 * @text Log window
-* @parent Windows
+* @parent --Windows--
 * @type boolean
 * @default true
 * @desc enable or dsiable the log Window
 *
+* @param LogWindowToggle
+* @text Log window Toggle
+* @parent --Windows--
+* @type text
+* @default f
+* @desc setup your custom toggle button to show / hide Log window
+*
 * @param LogWindowScrollUp
 * @text Scroll Up
-* @parent Windows
+* @parent --Windows--
 * @type text
 * @default y
 * @desc set your custom shorcut for the scrolling up the log window
 *
 * @param LogWindowScrollDown
 * @text Scroll Down
-* @parent Windows
+* @parent --Windows--
 * @type text
 * @default c
 * @desc set your custom shorcut for the scrolling down the log window
 *
 * @param SmartFadeEnable
 * @text Smart fade
-* @parent Windows
+* @parent --Windows--
 * @type boolean
 * @default true
 * @desc enable or dsiable the Smart fade function.
 *
 * @param EnableParalellRunningLog
 * @text Enable Paralell Log
-* @parent Windows
+* @parent --Windows--
 * @type boolean
 * @default false
 * @desc still in development...
 *
-* @param Logs
+* @param --Logs--
 *
 * @param EnableQuestLog
 * @text Enable Quest Log
-* @parent Logs
+* @parent --Logs--
 * @type boolean
 * @default false
 * @desc enable or disable the Yanfly Quest Journay Plugin logs
 *
 * @param EnableVarTracker
 * @text Enable Variables log
-* @parent Logs
+* @parent --Logs--
 * @type boolean
 * @default true
 * @desc enable or disable the log for the Variables changes
 *
+* @param EnableConditionalTracker
+* @text Enable Conditional Log
+* @parent --Logs--
+* @type boolean
+* @default true
+* @desc enable or disable the log for the Conditional Branch state (true / false)
+*
 * @param StarterVariable
 * @text Starter Variable
-* @parent Logs
+* @parent --Logs--
 * @type variable
 * @default 2
 * @desc Variable for game starter log track. Set None aka 0 if not want to log the Start.
 *
+* @param EnableSwitcherLog
+* @text Enable Switcher state Log
+* @parent --Logs--
+* @type boolean
+* @default true
+* @desc enable or disable the Switchers log
+*
 * @param EnableSelfSwitch
 * @text Enable Self Switch log
-* @parent Logs
+* @parent --Logs--
 * @type boolean
 * @default true
 * @desc enable or disable the self switch logs
 *
 * @param EnableMoveMentLog
 * @text Enable MoveMent Log
-* @parent Logs
+* @parent --Logs--
 * @type boolean
 * @default true
 * @desc enable or disable the Movement log (only for events)
 *
 * @param EnableItemLog
 * @text Enable Items Log
-* @parent Logs
+* @parent --Logs--
 * @type boolean
 * @default true
 * @desc enable or disable the items gain / remove logs
 *
+* @param EnableWaitingLog
+* @text Enable Waiting Log
+* @parent --Logs--
+* @type boolean
+* @default true
+* @desc enable or disable the Waiting command log
+*
 * @param StepsLog
 * @text Steps log
-* @parent Logs
+* @parent --Logs--
 * @type number
 * @default 100
 * @desc You can log, if player reach selected amount of steps (this will repeat). Min log value 25 steps
 *
-* @param Modal Window Group #1
+* @param --PlayerLogs--
+*
+* @param XpChangedLogs
+* @text XP Changed logs
+* @parent --PlayerLogs--
+* @type boolean
+* @default true
+* @desc Enable or disable the logs for the xp changes
+*
+* @param --Modal Window Group #1--
 *
 * @param EnableModalWinGroup1
 * @text Enable Group #1
-* @parent Modal Window Group #1
+* @parent --Modal Window Group #1--
 * @type boolean
 * @default true
 * @desc Always just one modal group window can enable the same time
 *
 * @param ItemWatcher
 * @text Enable Item Watcher #1
-* @parent Modal Window Group #1
+* @parent --Modal Window Group #1--
 * @type item
 * @desc select which item you want to track.
 *
 * @param ItemWatcher2
 * @text Enable Item Watcher #2
-* @parent Modal Window Group #1
+* @parent --Modal Window Group #1--
 * @type item
 * @desc select which item you want to track.
 *
 * @param ItemWatcher3
 * @text Enable Item Watcher #3
-* @parent Modal Window Group #1
+* @parent --Modal Window Group #1--
 * @type item
 * @desc select which item you want to track.
 *
-* @param Modal Window Group #2
+* @param --Modal Window Group #2--
 *
 * @param EnableModalWinGroup2
 * @text Enable Group #2
-* @parent Modal Window Group #2
+* @parent --Modal Window Group #2--
 * @type boolean
 * @default false
 * @desc Always just one modal group window can enable the same time
@@ -252,8 +300,7 @@
 * @value PlayerClass
 * @option Map Name
 * @value MapName
-*
-* @parent Modal Window Group #2
+* @parent --Modal Window Group #2--
 *
 * @param PlayerInfo2
 * @text Player info 2
@@ -270,7 +317,7 @@
 * @value PlayerLevel
 * @option Player Class
 * @value PlayerClass
-* @parent Modal Window Group #2
+* @parent --Modal Window Group #2--
 *
 * @param PlayerInfo3
 * @text Player info 3
@@ -287,9 +334,9 @@
 * @value PlayerLevel
 * @option Player Class
 * @value PlayerClass
-* @parent Modal Window Group #2 
+* @parent --Modal Window Group #2--
 *
-* @param Milestones Logs
+* @param --Milestones Logs--
 * 
 */
 
@@ -313,12 +360,19 @@ INDIE.Debugger = INDIE.Debugger || {};
     // logs params
     var enableParalellRunningLog = JSON.parse(parameters['EnableParalellRunningLog'] || 'false');
     var EnableVarTracker = JSON.parse(parameters['EnableVarTracker'] || 'true');
+    var EnableSwitcherLog = JSON.parse(parameters['EnableSwitcherLog'] || 'true');
     var EnableSelfSwitch = JSON.parse(parameters['EnableSelfSwitch'] || 'true');
     var EnableMoveMentLog = JSON.parse(parameters['EnableMoveMentLog'] || 'true');
     var EnableItemLog = JSON.parse(parameters['EnableItemLog'] || 'true');
+    var EnableWaitingLog = JSON.parse(parameters['EnableWaitingLog'] || 'true');
 
     var StarterVariable = Number(parameters['StarterVariable'] || '2');
     var StepsLog = Number(parameters['StepsLog'] || '100');
+
+    // Player logs
+    
+    var XpChangedLogs = JSON.parse(parameters['XpChangedLogs'] || 'true');
+
 
     var logScrollUpKey = parameters['LogWindowScrollUp'] || 'y'; // Default 'y'
     var logScrollDownKey = parameters['LogWindowScrollDown'] || 'c'; // Default 'c'
@@ -353,6 +407,9 @@ INDIE.Debugger = INDIE.Debugger || {};
     INDIE.Debugger.isDialogueRunning = false;
     INDIE.Debugger.isBattleRunning = false;
 
+    INDIE.Debugger.logWindowVisible = true;
+    var logWindowToggleKey = parameters['LogWindowToggle'] || 'f';
+    Input.keyMapper[logWindowToggleKey.toUpperCase().charCodeAt(0)] = 'logToggle';
 //=============================================================================
 // ** Windows 
 //=============================================================================
@@ -409,6 +466,20 @@ var _Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
         }
     };
 
+
+    // hide show log window
+
+    // Update the log toggle method
+    Scene_Map.prototype.processLogToggle = function() {
+        if (Input.isTriggered('logToggle')) {
+            if (this._debugLogWindow.visible) {
+                this._debugLogWindow.manualHide();
+            } else {
+                this._debugLogWindow.manualShow();
+            }
+        }
+    };
+    
 
 //=============================================================================
 // ** Modal Window Group 1
@@ -956,6 +1027,7 @@ Window_DebugLog.prototype.constructor = Window_DebugLog;
 
 
     Window_DebugLog.prototype.initialize = function() {
+        this._manuallyHidden = false;
         this._log = []; // Array to hold the log
         this._log = INDIE.Debugger.logData || [];
         this._lastLogTime = Date.now(); // Holds the time of the last log entry
@@ -967,6 +1039,30 @@ Window_DebugLog.prototype.constructor = Window_DebugLog;
         this.refresh();
     };
 
+
+    // Update the hide and show methods
+    Window_DebugLog.prototype.hide = function() {
+    if (!this._manuallyHidden) { // Only hide if not manually hidden
+        Window_Selectable.prototype.hide.call(this);
+    }
+};
+
+    Window_DebugLog.prototype.show = function() {
+    if (!this._manuallyHidden) { // Only show if not manually hidden
+        Window_Selectable.prototype.show.call(this);
+    }
+};
+
+    // Add new methods to manually hide and show the window
+Window_DebugLog.prototype.manualHide = function() {
+    this._manuallyHidden = true;
+    Window_Selectable.prototype.hide.call(this);
+};
+
+Window_DebugLog.prototype.manualShow = function() {
+    this._manuallyHidden = false;
+    Window_Selectable.prototype.show.call(this);
+};
 
     var _Scene_Boot_start = Scene_Boot.prototype.start;
     Scene_Boot.prototype.start = function() {
@@ -1471,7 +1567,7 @@ Game_Switches.prototype.setValue = function(switchId, value) {
     var oldValue = this.value(switchId);  // Get the old value of the switch
     _Game_Switches_setValue.call(this, switchId, value);
     
-    if (oldValue !== value) {  // Only log if the switch value has actually changed
+    if (EnableSwitcherLog && oldValue !== value) {  // Only log if the switch value has actually changed
         var scene = SceneManager._scene;
         if (scene instanceof Scene_Map && scene._debugLogWindow) {
             var currentTime = getCurrentTime();
@@ -1482,6 +1578,7 @@ Game_Switches.prototype.setValue = function(switchId, value) {
         }
     }
 };
+
 
 
 
@@ -1729,7 +1826,8 @@ var lastLoggedStepCount = 0;
 var _Scene_Map_update = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     _Scene_Map_update.call(this); // Call original function
-
+    // log window toggle process
+    this.processLogToggle();
     // Get current step count
     var currentSteps = $gameParty.steps();
 
@@ -1790,52 +1888,112 @@ Game_Interpreter.prototype.command282 = function() {
     return _Game_Interpreter_command282.call(this);
 };
 
+//=============================================================================
+// ** PLAYERS LOGS
+//=============================================================================
+// ** Log watcher's - Level Up / DOWN -- Not working yet..
+//=============================================================================
+
+// if(LevelUpAndDown){
+//     var oldLevel;
+
+//     // Override Game_Actor.prototype.changeLevel
+//     var _Game_Actor_changeLevel = Game_Actor.prototype.changeLevel;
+//     Game_Actor.prototype.changeLevel = function(level, show) {
+//         oldLevel = this._level; // Save old level
+//         _Game_Actor_changeLevel.call(this, level, show); // Call original method
+
+//         var scene = SceneManager._scene;
+//         if (show && scene instanceof Scene_Map && scene._debugLogWindow && oldLevel !== this._level) {
+//             // Determine level up or level down
+//             var levelChangeText = level > oldLevel ? "[LEVEL UP] - " : "[LEVEL DOWN] - ";
+//             var logText = getCurrentTime() + " " + levelChangeText + "" + this._name + " from (" + oldLevel + ") to (" + level + ")";
+//             scene._debugLogWindow.addLine(logText);
+//         }
+//     };
+
+//     // Override Game_Actor.prototype.levelUp
+//     var _Game_Actor_levelUp = Game_Actor.prototype.levelUp;
+//     Game_Actor.prototype.levelUp = function() {
+//         oldLevel = this._level; // Save old level
+//         _Game_Actor_levelUp.call(this); // Call original method
+
+//         var scene = SceneManager._scene;
+//         if (scene instanceof Scene_Map && scene._debugLogWindow && oldLevel !== this._level) {
+//             var logText = getCurrentTime() + " [LEVEL UP] - " + this._name + " from (" + oldLevel + ") to (" + this._level + ")";
+//             scene._debugLogWindow.addLine(logText);
+//         }
+//     };
+
+//     // Override Game_Actor.prototype.levelDown
+//     var _Game_Actor_levelDown = Game_Actor.prototype.levelDown;
+//     Game_Actor.prototype.levelDown = function() {
+//         oldLevel = this._level; // Save old level
+//         _Game_Actor_levelDown.call(this); // Call original method
+
+//         var scene = SceneManager._scene;
+//         if (scene instanceof Scene_Map && scene._debugLogWindow && oldLevel !== this._level) {
+//             var logText = getCurrentTime() + " [LEVEL DOWN] - " + this._name + " from (" + oldLevel + ") to (" + this._level + ")";
+//             scene._debugLogWindow.addLine(logText);
+//         }
+//     };
+// }
+
+
 
 //=============================================================================
-// ** Log watcher's - Level Up / DOWN
+// ** Log watcher's - XP GAIN / remove from event
 //=============================================================================
-
-
-// Override Game_Actor.prototype.changeLevel
-var _Game_Actor_changeLevel = Game_Actor.prototype.changeLevel;
-Game_Actor.prototype.changeLevel = function(level, show) {
-    var oldLevel = this._level; // Save old level
-    _Game_Actor_changeLevel.call(this, level, show); // Call original method
-
-    var scene = SceneManager._scene;
-    if (show && scene instanceof Scene_Map && scene._debugLogWindow && oldLevel !== this._level) {
-        // Determine level up or level down
-        var levelChangeText = level > oldLevel ? "[LEVEL UP] - " : "[LEVEL DOWN] - ";
-        var logText = getCurrentTime() + " " + levelChangeText + "" + this._name + " from (" + oldLevel + ") to (" + level + ")";
-        scene._debugLogWindow.addLine(logText);
+// Override Game_Interpreter.prototype.command315
+var _Game_Interpreter_command315 = Game_Interpreter.prototype.command315;
+Game_Interpreter.prototype.command315 = function() {
+    var targetActors = [];
+    switch (this._params[0]) {
+        case 0:  // The whole party
+            targetActors = $gameParty.members();
+            break;
+        case 1:  // Specific actor
+            targetActors.push($gameActors.actor(this._params[1]));
+            break;
     }
+
+    targetActors.forEach(function(actor) {
+        if (actor === undefined) return;
+
+        // Calculate the amount of XP to be added or removed
+        var value = (this._params[2] === 0 ? this._params[3] : $gameVariables.value(this._params[3]));
+        if (this._params[1] === 1) {
+            value = -value;
+        }
+
+        // Save the actor's old XP
+        var oldXP = actor.currentExp();
+
+        // Call the original method
+        _Game_Interpreter_command315.call(this);
+
+        // Calculate the XP difference
+        var xpDifference = actor.currentExp() - oldXP;
+
+        // Log the XP change only if the change is not zero and if XpChangedLogs is true
+        if (xpDifference !== 0 && XpChangedLogs) {
+            var scene = SceneManager._scene;
+            if (scene instanceof Scene_Map && scene._debugLogWindow) {
+                var expChangeText = xpDifference > 0 ? "[EXP GAINED] - " : "[EXP REMOVED] - ";
+                var logText = getCurrentTime() + " " + expChangeText + actor._name + " changed XP by " + xpDifference;
+                scene._debugLogWindow.addLine(logText);
+            }
+        }
+    }.bind(this));
+
+    // Always return true to not break game's event command flow
+    return true;
 };
 
-// Override Game_Actor.prototype.levelUp
-var _Game_Actor_levelUp = Game_Actor.prototype.levelUp;
-Game_Actor.prototype.levelUp = function() {
-    var oldLevel = this._level; // Save old level
-    _Game_Actor_levelUp.call(this); // Call original method
 
-    var scene = SceneManager._scene;
-    if (scene instanceof Scene_Map && scene._debugLogWindow && oldLevel !== this._level) {
-        var logText = getCurrentTime() + " [LEVEL UP] - " + this._name + " from (" + oldLevel + ") to (" + this._level + ")";
-        scene._debugLogWindow.addLine(logText);
-    }
-};
-
-// Override Game_Actor.prototype.levelDown
-var _Game_Actor_levelDown = Game_Actor.prototype.levelDown;
-Game_Actor.prototype.levelDown = function() {
-    var oldLevel = this._level; // Save old level
-    _Game_Actor_levelDown.call(this); // Call original method
-
-    var scene = SceneManager._scene;
-    if (scene instanceof Scene_Map && scene._debugLogWindow && oldLevel !== this._level) {
-        var logText = getCurrentTime() + " [LEVEL DOWN] - " + this._name + " from (" + oldLevel + ") to (" + this._level + ")";
-        scene._debugLogWindow.addLine(logText);
-    }
-};
+//=============================================================================
+// ** Log watcher's - Change hp from event
+//=============================================================================
 
 //=============================================================================
 // ** Log watcher's - Party Changes
@@ -2103,27 +2261,29 @@ Game_Interpreter.prototype.finishCommonEvent = function(commonEventId) {
 // ** Log watcher's - Waiting log
 //=============================================================================
    
-    var _Game_Interpreter_updateWait = Game_Interpreter.prototype.updateWait;
-    Game_Interpreter.prototype.updateWait = function() {
-    var waitingStarted = this._waitCount && !this._prevWaitCount;
-    var waitingEnded = !this._waitCount && this._prevWaitCount;
+var _Game_Interpreter_updateWait = Game_Interpreter.prototype.updateWait;
+Game_Interpreter.prototype.updateWait = function() {
+    if (EnableWaitingLog) {
+        var waitingStarted = this._waitCount && !this._prevWaitCount;
+        var waitingEnded = !this._waitCount && this._prevWaitCount;
 
-    if (waitingStarted) {
-        var currentTime = getCurrentTime();
-        // Konvertálja a várakozási időt másodpercekbe
-        var waitTimeInSeconds = this._waitCount / 60;
-        var logText = currentTime + " Waiting " + waitTimeInSeconds.toFixed(2) + " seconds";
-        if (window.currentMapScene && window.currentMapScene._debugLogWindow) {
-            window.currentMapScene._debugLogWindow.addLine(logText);
+        if (waitingStarted) {
+            var currentTime = getCurrentTime();
+            // Convert the wait time to seconds
+            var waitTimeInSeconds = this._waitCount / 60;
+            var logText = currentTime + " Waiting " + waitTimeInSeconds.toFixed(2) + " seconds";
+            if (window.currentMapScene && window.currentMapScene._debugLogWindow) {
+                window.currentMapScene._debugLogWindow.addLine(logText);
+            }
+        } else if (waitingEnded) {
+            var currentTime = getCurrentTime();
+            if (window.currentMapScene && window.currentMapScene._debugLogWindow) {
+                window.currentMapScene._debugLogWindow.addLine(currentTime + " Waiting is over");
+            }
         }
-    } else if (waitingEnded) {
-        var currentTime = getCurrentTime();
-        if (window.currentMapScene && window.currentMapScene._debugLogWindow) {
-            window.currentMapScene._debugLogWindow.addLine(currentTime + " Waiting is over");
-        }
+
+        this._prevWaitCount = this._waitCount;
     }
-
-    this._prevWaitCount = this._waitCount;
 
     return _Game_Interpreter_updateWait.call(this);
 };
@@ -2323,6 +2483,8 @@ Scene_Map.prototype.createEventLabels = function() {
         }, this);
     }, this);
 };
+
+
 
 
 
