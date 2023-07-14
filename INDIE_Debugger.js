@@ -3,9 +3,10 @@
 //=============================================================================
 
 /*:
-* @plugindesc Debugger plugin
+* @plugindesc Useful real-time debugger plugin for developers. v0.19
 * @author Soczó Kristóf
 * @help
+* 
 * 
 * /=====================================================================/
 * Useful tool for debug your project visually when running the game
@@ -48,7 +49,20 @@
 * - Completed, Added (all of types : single, multiple, or ranges)
 * Note that this monitors the running of the plugin command.
 *
-* Changelog
+* /============================Changelog================================/
+* 
+*
+* 0.19.0
+*
+* NEW Title screen scrollable window show the activated plugins. (+ version support)
+* Complete refactored the Log system storage (Many future problems have been solved)
+* Resized the log window (+30 width)
+* Repositioned the Modal window Groups
+* Fixed the issue if the player opened the shop, the same event action logs deleted.
+* Option to delete the logs.(you can define a keyups)
+* Option to enable or disable, if player teleport, log every prev logs from the window deleting
+* Title screen show the Debugger is enabled text
+* New Goal system (pre-alpha) think no big deal
 *
 * 0.18.0
 *
@@ -153,6 +167,20 @@
 * @type text
 * @default f
 * @desc setup your custom toggle button to show / hide Log window
+*
+* @param LogsDelete
+* @text Logs Delete
+* @parent --Windows--
+* @type text
+* @default q
+* @desc setup your custom delete button
+*
+* @param TeleportDeletePrevLogs
+* @text Teleport Del Logs
+* @parent --Windows--
+* @type boolean
+* @default false
+* @desc if enable, when player teleport, will delete all prev logs.
 *
 * @param LogWindowScrollUp
 * @text Scroll Up
@@ -359,7 +387,20 @@
 * @value PlayerClass
 * @parent --Modal Window Group #2--
 *
-* @param --Milestones Logs--
+* @param --Goals Logs--
+*
+* @param ProgressGold
+* @parent --Goals Logs--
+* @text Goal Gold
+* @type boolean
+* @default false
+* @desc If enable and set amount, the Debugger will send a log, if player reached the progress.
+*
+* @param ProgressGoldAmount
+* @text Goal Gold Amount
+* @parent --Goals Logs--
+* @type number
+* @desc Set a specified amount. if player reached, will send a log into your window
 * 
 */
 
@@ -376,12 +417,12 @@ INDIE.Debugger = INDIE.Debugger || {};
     var enableStepCounterWIndow = JSON.parse(parameters['EnableStepCounterWIndow'] || 'true');
     var enableLogWindow = JSON.parse(parameters['EnableLogWindow'] || 'true'); 
     var smartFadeEnable = JSON.parse(parameters['SmartFadeEnable'] || 'true');
+    var TeleportDeletePrevLogs = JSON.parse(parameters['TeleportDeletePrevLogs'] || 'false');
 
     // yanfly Quest Journay
     var EnableQuestLog = JSON.parse(parameters['EnableQuestLog'] || 'false');
 
     // logs params
-    var enableParalellRunningLog = JSON.parse(parameters['EnableParalellRunningLog'] || 'false');
     var EnableVarTracker = JSON.parse(parameters['EnableVarTracker'] || 'true');
     var EnableSwitcherLog = JSON.parse(parameters['EnableSwitcherLog'] || 'true');
     var EnableSelfSwitch = JSON.parse(parameters['EnableSelfSwitch'] || 'true');
@@ -439,7 +480,18 @@ INDIE.Debugger = INDIE.Debugger || {};
 
     INDIE.Debugger.logWindowVisible = true;
     var logWindowToggleKey = parameters['LogWindowToggle'] || 'f';
+    var LogsDelete = parameters['LogsDelete'] || 'q';
+    Input.keyMapper[LogsDelete.toUpperCase().charCodeAt(0)] = 'clearLog';
     Input.keyMapper[logWindowToggleKey.toUpperCase().charCodeAt(0)] = 'logToggle';
+
+
+
+    // Progress trackers
+
+    var ProgressGold = Boolean(parameters['ProgressGold']);
+    var ProgressGoldAmount = Number(parameters['ProgressGoldAmount']);
+    var goldProgressDone = false; 
+
 //=============================================================================
 // ** Windows 
 //=============================================================================
@@ -528,7 +580,7 @@ var _Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
         var width = this.windowWidth();
         var height = this.windowHeight();
         var x = Graphics.boxWidth - 450; 
-        var y = Graphics.boxHeight - 500 - height; 
+        var y = Graphics.boxHeight - 500 - height - 10;
         Window_Base.prototype.initialize.call(this, x, y, width, height);
         this.refresh();
     };
@@ -575,7 +627,6 @@ var _Scene_Map_createAllWindows = Scene_Map.prototype.createAllWindows;
         }
     };
 
-
 // Item Watcher #2
 
 function Window_ItemWatcher2() {
@@ -589,7 +640,7 @@ Window_ItemWatcher2.prototype.initialize = function() {
     var width = this.windowWidth();
     var height = this.windowHeight();
     var x = Graphics.boxWidth - 450 + this.windowWidth() + 5; // Move this window to the right of the first one
-    var y = Graphics.boxHeight - 500 - height; 
+    var y = Graphics.boxHeight - 500 - height - 10;
     Window_Base.prototype.initialize.call(this, x, y, width, height);
     this.refresh();
 };
@@ -624,7 +675,7 @@ Window_ItemWatcher3.prototype.initialize = function() {
     var width = this.windowWidth();
     var height = this.windowHeight();
     var x = Graphics.boxWidth - 450 + (this.windowWidth() * 2) + 10; // Move this window to the right of the second one
-    var y = Graphics.boxHeight - 500 - height; 
+    var y = Graphics.boxHeight - 500 - height - 10;
     Window_Base.prototype.initialize.call(this, x, y, width, height);
     this.refresh();
 };
@@ -668,7 +719,7 @@ Window_PlayerInfo1.prototype.initialize = function() {
     var width = this.windowWidth();
     var height = this.windowHeight();
     var x = Graphics.boxWidth - 450; 
-    var y = Graphics.boxHeight - 500 - height; 
+    var y = Graphics.boxHeight - 500 - height - 10;
     Window_Base.prototype.initialize.call(this, x, y, width, height);
     this.refresh();
 };
@@ -754,7 +805,7 @@ Window_PlayerInfo2.prototype.initialize = function() {
     var width = this.windowWidth();
     var height = this.windowHeight();
     var x = Graphics.boxWidth - 450 + this.windowWidth() + 5;
-    var y = Graphics.boxHeight - 500 - height;
+    var y = Graphics.boxHeight - 500 - height - 10;
     Window_Base.prototype.initialize.call(this, x, y, width, height);
     this.refresh();
 };
@@ -833,7 +884,7 @@ Window_PlayerInfo3.prototype.initialize = function() {
     var width = this.windowWidth();
     var height = this.windowHeight();
     var x = Graphics.boxWidth - 450 + (this.windowWidth() * 2) + 10;
-    var y = Graphics.boxHeight - 500 - height;
+    var y = Graphics.boxHeight - 500 - height - 10;
     Window_Base.prototype.initialize.call(this, x, y, width, height);
     this.refresh();
 };
@@ -1056,18 +1107,20 @@ Window_DebugLog.prototype.constructor = Window_DebugLog;
 
 
 
-    Window_DebugLog.prototype.initialize = function() {
-        this._manuallyHidden = false;
-        this._log = []; // Array to hold the log
-        this._log = INDIE.Debugger.logData || [];
-        this._lastLogTime = Date.now(); // Holds the time of the last log entry
-        var x = Graphics.boxWidth - 450; // The x position of the window
-        var y = Graphics.boxHeight - 500; // The y position of the window
-        var width = 450; // The width of the window
-        var height = 500; // The height of the window
-        Window_Selectable.prototype.initialize.call(this, x, y, width, height);
-        this.refresh();
-    };
+Window_DebugLog.prototype.initialize = function() {
+    this._manuallyHidden = false;
+    this._log = INDIE.Debugger.logData || []; // Load the logs from INDIE.Debugger.logData
+    this._lastLogTime = Date.now();
+    // var x = Graphics.boxWidth - 450;
+    var x = Graphics.boxWidth - 480;
+    var y = Graphics.boxHeight - 500;
+    // var width = 450;
+    var width = 480;
+    var height = 500;
+    Window_Selectable.prototype.initialize.call(this, x, y, width, height);
+    this.refresh();
+};
+
 
 
     // Update the hide and show methods
@@ -1094,11 +1147,17 @@ Window_DebugLog.prototype.manualShow = function() {
     Window_Selectable.prototype.show.call(this);
 };
 
-    var _Scene_Boot_start = Scene_Boot.prototype.start;
-    Scene_Boot.prototype.start = function() {
-        _Scene_Boot_start.call(this);
-        INDIE.Debugger._debugLog = new Window_DebugLog();
-    };
+var _Scene_Boot_start = Scene_Boot.prototype.start;
+Scene_Boot.prototype.start = function() {
+    _Scene_Boot_start.call(this);
+    // Delete the current Window_DebugLog
+    if (INDIE.Debugger._debugLog) {
+        INDIE.Debugger._debugLog.hide();
+        INDIE.Debugger._debugLog = null;
+    }
+    // Create a new Window_DebugLog
+    INDIE.Debugger._debugLog = new Window_DebugLog();
+};
     
       
 
@@ -1424,32 +1483,32 @@ Window_DebugLog.prototype.drawItem = function(index) {
 
 
 Window_DebugLog.prototype.addLine = function(text) {
-    this.contents.fontSize = 16; // add this line
+    this.contents.fontSize = 16;
     var lines = this.drawTextExWithFontSize(text, 0, 0, this.contentsWidth());
-    
+
     if (this._log.length === 0) {
-        // If it's the first line, add some empty lines before
         for (let i = 0; i < 1; i++) {
             this._log.push([" "]);
         }
     }
 
-    let linesAdded = 0;  // Keep track of the number of lines added
+    let linesAdded = 0;
     for (let line of lines) {
         this._log.push([line]);
-        linesAdded += 1;  // Increase the count for each line added
+        linesAdded += 1;
     }
 
-    INDIE.Debugger.logData = this._log; 
-    this._lastLogTime = Date.now(); 
+    // Update INDIE.Debugger.logData
+    INDIE.Debugger.logData = this._log;
+
+    this._lastLogTime = Date.now();
     if (!smartFadeEnable) {
-        // If the smart fade is not enabled, always set the opacity to maximum
         this.opacity = 255;
     }
     this.refresh();
-    // Now use the count of lines added to correctly set the top row
     this.setTopRow(Math.max(0, this._log.length - this.maxPageItems() + linesAdded - 1));
 };
+
 
 
 // message hides triggers
@@ -1856,6 +1915,11 @@ var _Scene_Map_update = Scene_Map.prototype.update;
 Scene_Map.prototype.update = function() {
     _Scene_Map_update.call(this); // Call original function
 
+    if (Input.isTriggered('clearLog')) {
+        if (this._debugLogWindow) {
+            this._debugLogWindow.clear();
+        }
+    }
     if (this._debugLogWindow && ItemUsedLog && lastUsedItemsLog.length > 0) { // Check if ItemUsedLog is true
         for (var i = 0; i < lastUsedItemsLog.length; i++) {
             this._debugLogWindow.addLine(lastUsedItemsLog[i]);
@@ -1874,6 +1938,20 @@ Scene_Map.prototype.update = function() {
         // Update the last logged step count
         lastLoggedStepCount = currentSteps;
     }
+
+    // progress tracker
+
+    if (ProgressGold && ProgressGoldAmount > 0) {
+        // Check if the gold progress is done
+        if ($gameParty.gold() >= ProgressGoldAmount && !goldProgressDone) {
+            if (this._debugLogWindow) {
+                var logText = getCurrentTime() + " [PROGRESS Gold] done: " + ProgressGoldAmount;
+                this._debugLogWindow.addLine(logText);
+                goldProgressDone = true;  // mark as done so we don't log this again
+            }
+        }
+    }
+
 };
 
 
@@ -2293,9 +2371,12 @@ Scene_Map.prototype.update = function() {
                           " to " + newMapName;
             if (this._debugLogWindow) {
                 this._debugLogWindow.addLine(logText);
+                if(TeleportDeletePrevLogs){
+                    this._debugLogWindow.clear();
+                    this._debugLogWindow.addLine(logText);
+                }
+                isTeleporting = false;
             }
-
-            isTeleporting = false;
         }
     }
 
@@ -2310,9 +2391,6 @@ Scene_Map.prototype.update = function() {
         }
     }
 };
-
-
-
 
 
 
@@ -2502,11 +2580,6 @@ Game_Temp.prototype.reserveCommonEvent = function(commonEventId) {
     _Game_Temp_reserveCommonEvent.call(this, commonEventId);
 };
 
-//=============================================================================
-// ** Dialog log via script call (in development)
-//=============================================================================
-
-
 
 //=============================================================================
 // ** Utility
@@ -2519,6 +2592,18 @@ Game_Temp.prototype.reserveCommonEvent = function(commonEventId) {
         var seconds = time % 60;
         return hours.padZero(2) + ":" + minutes.padZero(2) + ":" + seconds.padZero(2);
     }
+
+
+    var _Scene_Title_createForeground = Scene_Title.prototype.createForeground;
+    Scene_Title.prototype.createForeground = function() {
+        _Scene_Title_createForeground.call(this); // Call original function
+    
+        var sprite = new Sprite(new Bitmap(Graphics.width, Graphics.height));
+        sprite.bitmap.fontSize = 20;
+        sprite.bitmap.drawText("Debugger plugin is ENABLED v.0.19", 0, Graphics.height - 40, Graphics.width, 20, 'center');
+        this.addChild(sprite);
+    };
+    
 
 
 
@@ -2613,9 +2698,147 @@ Scene_Map.prototype.createEventLabels = function() {
     }, this);
 };
 
+//=============================================================================
+// ** Title screen plugin window
+//=============================================================================
+
+function Window_PluginList() {
+    this.initialize.apply(this, arguments);
+}
+
+Window_PluginList.prototype = Object.create(Window_Base.prototype);
+Window_PluginList.prototype.constructor = Window_PluginList;
+
+Window_PluginList.prototype.initialize = function(x, y) {
+    var width = Graphics.boxWidth / 3;  // Szélesség növelése
+    var height = Graphics.boxHeight / 2;
+    Window_Base.prototype.initialize.call(this, x + 10, y, width, height);  // Távolság a bal széltől
+    this._data = [];
+    this._scrollY = 0;
+    this.createArrows();
+    this.refresh();
+};
+
+Window_PluginList.prototype.createArrows = function() {
+    var spacing = 52;
+    var y = this.height - this.padding - spacing;
+    this._downArrowSprite = new Sprite();
+    this._downArrowSprite.bitmap = this._windowskin;
+    this._downArrowSprite.anchor.y = 0.5;
+    this._downArrowSprite.setFrame(192, 0, 32, 32);
+    this._downArrowSprite.move(this._width / 2, y + spacing);
+    this._downArrowSprite.visible = false;
+
+    this._upArrowSprite = new Sprite();
+    this._upArrowSprite.bitmap = this._windowskin;
+    this._upArrowSprite.anchor.y = 0.5;
+    this._upArrowSprite.setFrame(192, 0, 32, 32);
+    this._upArrowSprite.move(this._width / 2, y);
+    this._upArrowSprite.visible = false;
+
+    this.addChild(this._downArrowSprite);
+    this.addChild(this._upArrowSprite);
+};
+
+Window_PluginList.prototype.refresh = function() {
+    this.contents.clear();
+    this.contents.fontSize = 16;  // Betűméret csökkentése
+    this._data = $plugins.filter(function(plugin) {
+        return plugin.status;
+    }).map(function(plugin) {
+        var versionMatch = plugin.description.match(/v\s*\d+\.\d+(\.\d+)?/i);
+        var version = versionMatch ? versionMatch[0] : "";
+        return plugin.name + " " + version;
+    });
+    for (var i = 0; i < this._data.length; i++) {
+        this.drawText(this._data[i], 0, i * this.lineHeight() - this._scrollY, this.contentsWidth(), 'left');
+    }
+};
 
 
 
+
+Window_PluginList.prototype.maxItems = function() {
+    return this._data ? this._data.length : 1;
+};
+
+Window_PluginList.prototype.scrollDown = function() {
+    if (this._scrollY <= ((this._data.length - 1) * this.lineHeight() - this.height + this.lineHeight())) {
+        this._scrollY += this.lineHeight();
+        this.refresh();
+    }
+};
+
+Window_PluginList.prototype.scrollUp = function() {
+    if (this._scrollY >= this.lineHeight()) {
+        this._scrollY -= this.lineHeight();
+        this.refresh();
+    }
+};
+
+Window_PluginList.prototype.update = function() {
+    Window_Base.prototype.update.call(this);
+    this.updateArrowsVisibility();
+};
+
+Window_PluginList.prototype.updateArrowsVisibility = function() {
+    var maxScrollY = (this._data.length - this.fittingHeight()) * this.lineHeight();
+    var canScrollUp = this._scrollY > 0;
+    var canScrollDown = this._scrollY < maxScrollY;
+
+    this._upArrowSprite.visible = canScrollUp;
+    this._downArrowSprite.visible = canScrollDown;
+};
+
+
+
+var _Scene_Title_create = Scene_Title.prototype.create;
+Scene_Title.prototype.create = function() {
+    _Scene_Title_create.call(this);
+    this.createPluginListWindow();
+};
+
+Scene_Title.prototype.createPluginListWindow = function() {
+    this._pluginListHeaderWindow = new Window_PluginListHeader(0, Graphics.boxHeight / 4);
+    this._pluginListWindow = new Window_PluginList(0, Graphics.boxHeight / 4 + this._pluginListHeaderWindow.height);
+    this.addWindow(this._pluginListHeaderWindow);
+    this.addWindow(this._pluginListWindow);
+};
+
+var _Scene_Title_update = Scene_Title.prototype.update;
+Scene_Title.prototype.update = function() {
+    _Scene_Title_update.call(this);
+    if (Input.isTriggered('scrollUp')) {
+        this._pluginListWindow.scrollUp();
+    }
+    if (Input.isTriggered('scrollDown')) {
+        this._pluginListWindow.scrollDown();
+    }
+};
+
+function Window_PluginListHeader() {
+    this.initialize.apply(this, arguments);
+}
+
+Window_PluginListHeader.prototype = Object.create(Window_Base.prototype);
+Window_PluginListHeader.prototype.constructor = Window_PluginListHeader;
+
+Window_PluginListHeader.prototype.initialize = function(x, y) {
+    var width = Graphics.boxWidth / 3;  
+    var height = this.fittingHeight(1);
+    Window_Base.prototype.initialize.call(this, x + 10, y, width, height);  
+    this.refresh();
+};
+
+
+Window_PluginListHeader.prototype.refresh = function() {
+    this.contents.clear();
+    this.contents.fontSize = 16;  // Betűméret csökkentése
+    var pluginCount = $plugins.filter(function(plugin) {
+        return plugin.status;
+    }).length;
+    this.drawText("Activated Plugins (" + pluginCount + ")", 0, 0, this.contentsWidth(), 'center');
+};
 
 
 })(INDIE.Debugger);
