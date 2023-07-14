@@ -123,11 +123,23 @@ The one is the ID of the event, and you can give the text a coloring if you like
 
 Autorun and Paralell events cannot currently be manually tracked properly. Here I am mainly working on finding an optimized solution for logging them.
 
-It is a high priority to complete this function.
 Currently, information can be printed from a parallel event. But if it is spammed, performance problems can occur, as it will keep trying to log (these are usually rare, but can happen)
 
 
+
 ### Changelog
+
+0.19.0
+
+* NEW Title screen scrollable window show the activated plugins. (+ version support)
+* Complete refactored the Log system storage (Many future problems have been solved)
+* Resized the log window (+30 width)
+* Repositioned the Modal window Groups
+* Fixed the issue if the player opened the shop, the same event action logs deleted.
+* Option to delete the logs.(you can define a keyups)
+* Option to enable or disable, if player teleport, log every prev logs from the window deleting
+* Title screen show the Debugger is enabled text
+* New Goal system (pre-alpha) think no big deal
 
 0.18.0
 
