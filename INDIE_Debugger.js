@@ -3,7 +3,7 @@
 //=============================================================================
 
 /*:
-* @plugindesc Useful real-time debugger plugin for developers. v0.19
+* @plugindesc Useful real-time debugger plugin for developers. v0.19.5
 * @author Soczó Kristóf
 * @help
 * 
@@ -22,7 +22,7 @@
 * this.finishEvent(this._eventId); will print if the event finished   // Use this if you need a better Hierarchical display
 * this.createEventLabel(1, "Hello World", "red"); // make a tag for your events ( only display when running the game)
 * 
-* Track list:   Switcher state (range not supported)
+* Track list:   Switcher state (both single and range supported)
 *               Self Switch State
 *               Variables changes
 *               Level up / Down (both manual, and automatically)
@@ -41,6 +41,9 @@
 *               Change Xp's (not battles)
 *               Items used in the menu (multiple support)
 *               Region movement 
+*               Tint Screen
+*               Play BGM
+*               Control timer (stopped / expired / rem time)
 *               Quest Jorunay (Yanfly)
 *               RegionEvents (Yanfly)
 *
@@ -50,6 +53,18 @@
 * Note that this monitors the running of the plugin command.
 *
 * /============================Changelog================================/
+* 
+* 0.19.5
+* 
+* Plugin list window resized
+* Pluginlist header no longer count the separator plugins.
+* NEW Tint Screen log (Support predefined versions too)
+* NEW Play BGM log
+* NEW Full Control timer logs
+* Reposition the countdown timer
+* New Range switcher now can log also
+* New Range Variable now can log also
+* Single variable log now will calculates the current value and will print also
 * 
 *
 * 0.19.0
@@ -265,7 +280,7 @@
 * @text Enable Waiting Log
 * @parent --Logs--
 * @type boolean
-* @default true
+* @default false
 * @desc enable or disable the Waiting command log
 *
 * @param EnableRegionLogs
@@ -402,6 +417,29 @@
 * @type number
 * @desc Set a specified amount. if player reached, will send a log into your window
 * 
+*
+* @param --Control Timer--
+*
+* @param ReposControlTimer
+* @parent --Control Timer--
+* @text Reposition Control Timer
+* @type boolean
+* @default true
+* @desc If true, debugger will be reposition your Control timer
+*
+* @param EnableCountdownLogs
+* @parent --Control Timer--
+* @text Enable Countdown Logs
+* @type boolean
+* @default true
+* @desc If true, countdown start will be logged
+*
+* @param HideExpiredTimer
+* @parent --Control Timer--
+* @text Hide Expired Timer
+* @type boolean
+* @default false
+* @desc If true, the expired counter will hide
 */
 
 var INDIE = INDIE || {};
@@ -419,6 +457,12 @@ INDIE.Debugger = INDIE.Debugger || {};
     var smartFadeEnable = JSON.parse(parameters['SmartFadeEnable'] || 'true');
     var TeleportDeletePrevLogs = JSON.parse(parameters['TeleportDeletePrevLogs'] || 'false');
 
+    // Control timer
+    var ReposControlTimer = JSON.parse(parameters['ReposControlTimer'] || 'true');
+    var EnableCountdownLogs = JSON.parse(parameters['EnableCountdownLogs'] || 'true');
+    var HideExpiredTimer = JSON.parse(parameters['HideExpiredTimer'] || 'false');
+
+
     // yanfly Quest Journay
     var EnableQuestLog = JSON.parse(parameters['EnableQuestLog'] || 'false');
 
@@ -428,7 +472,7 @@ INDIE.Debugger = INDIE.Debugger || {};
     var EnableSelfSwitch = JSON.parse(parameters['EnableSelfSwitch'] || 'true');
     var EnableMoveMentLog = JSON.parse(parameters['EnableMoveMentLog'] || 'true');
     var EnableItemLog = JSON.parse(parameters['EnableItemLog'] || 'true');
-    var EnableWaitingLog = JSON.parse(parameters['EnableWaitingLog'] || 'true');
+    var EnableWaitingLog = JSON.parse(parameters['EnableWaitingLog'] || 'false');
     var EnableRegionLogs = JSON.parse(parameters['EnableRegionLogs'] || 'true');
 
 
@@ -1666,6 +1710,31 @@ Game_Switches.prototype.setValue = function(switchId, value) {
         }
     }
 };
+// range type test
+var _Game_Interpreter_command121 = Game_Interpreter.prototype.command121;
+Game_Interpreter.prototype.command121 = function() {
+    var isSwitchRange = this._params[0] !== this._params[1];
+    if (EnableSwitcherLog && isSwitchRange) {  // Only log if this is a switch range
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var currentTime = getCurrentTime();
+            var startSwitchId = this._params[0];
+            var endSwitchId = this._params[1];
+            var switchState = this._params[2] === 0 ? "ON" : "OFF";
+            var logText = currentTime + " [RANGE SWITCHER] : " + startSwitchId + " - " + endSwitchId + ": " + switchState;
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+    // Temporarily disable switch logging
+    var oldEnableSwitcherLog = EnableSwitcherLog;
+    if (isSwitchRange) {
+        EnableSwitcherLog = false;
+    }
+    var result = _Game_Interpreter_command121.call(this);
+    // Restore the original logging state
+    EnableSwitcherLog = oldEnableSwitcherLog;
+    return result;
+};
 
 
 
@@ -2037,6 +2106,73 @@ Game_Player.prototype.moveStraight = function(d) {
     }
 };
 
+//=============================================================================
+// ** Log watcher's - Control Timer log
+//=============================================================================
+
+// log when start
+var _Game_Timer_start = Game_Timer.prototype.start;
+Game_Timer.prototype.start = function(count) {
+    _Game_Timer_start.call(this, count); // Call the original function
+    if (EnableCountdownLogs) {
+        // If Debug Log Window exists, log the countdown start
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var countdownTime = count / 60;
+            var minutes = Math.floor(countdownTime / 60);
+            var seconds = countdownTime % 60;
+
+            var logText = getCurrentTime() + " Countdown started " + minutes + ":" + (seconds < 10 ? '0' : '') + seconds;
+            scene._debugLogWindow.addLine(logText);
+        }
+    }    
+};
+
+// expired
+
+var _Game_Timer_onExpire = Game_Timer.prototype.onExpire;
+Game_Timer.prototype.onExpire = function() {
+    _Game_Timer_onExpire.call(this); // Call the original function
+    if (EnableCountdownLogs) {
+    // If Debug Log Window exists, log the expiration event
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var logText = getCurrentTime() + " Countdown expired";
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+    if (HideExpiredTimer) {
+     // Hide the countdown timer
+     $gameTimer._working = false;
+    }
+};
+
+// stopped
+
+var _Game_Timer_stop = Game_Timer.prototype.stop;
+Game_Timer.prototype.stop = function() {
+    // // Get the remaining time before stopping the timer
+    // var remainingTime = this.seconds();
+
+    _Game_Timer_stop.call(this); // Call the original function
+    if (EnableCountdownLogs) {
+        // Get the remaining time before stopping the timer
+        var remainingTime = this.seconds();
+    // If Debug Log Window exists, log the stop event and remaining time
+    var scene = SceneManager._scene;
+    if (scene instanceof Scene_Map && scene._debugLogWindow) {
+        var minutes = Math.floor(remainingTime / 60);
+        var seconds = remainingTime % 60;
+
+        var logText = getCurrentTime() + " Countdown stopped";
+        if (remainingTime > 0) {
+            logText += " - (rem time: " + minutes + ":" + (seconds < 10 ? '0' : '') + seconds + ")";
+        }
+
+        scene._debugLogWindow.addLine(logText);
+    }
+ }
+};
 
 
 
@@ -2317,6 +2453,10 @@ Game_Variables.prototype.setValue = function(variableId, value) {
                     logText += " decreased by " + Math.abs(diff);
                 }
                 scene._debugLogWindow.addLine(logText);
+
+                // Log the current value in a new line
+                var currentValText = currentTime + " [CURRENT VALUE] : " + value;
+                scene._debugLogWindow.addLine(currentValText);
             }
         }
     }
@@ -2324,6 +2464,133 @@ Game_Variables.prototype.setValue = function(variableId, value) {
     // Call the original setValue function to actually update the variable
     _Game_Variables_setValue.call(this, variableId, value);
 };
+
+
+
+// range version
+
+var _Game_Interpreter_command122 = Game_Interpreter.prototype.command122;
+Game_Interpreter.prototype.command122 = function() {
+    var isVariableRange = this._params[0] !== this._params[1];
+    if (EnableVarTracker && isVariableRange) {  // Only log if this is a variable range
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var currentTime = getCurrentTime();
+            var startVariableId = this._params[0];
+            var endVariableId = this._params[1];
+            var value = this.operateValue(this._params[2], this._params[3], this._params[4]);
+            var logText = currentTime + " [RANGE VARIABLE]: " + startVariableId + " - " + endVariableId + ": changed by " + Math.abs(value);            
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+    // Temporarily disable variable logging
+    var oldEnableVarTracker = EnableVarTracker;
+    if (isVariableRange) {
+        EnableVarTracker = false;
+    }
+    var result = _Game_Interpreter_command122.call(this);
+    // Restore the original logging state
+    EnableVarTracker = oldEnableVarTracker;
+    return result;
+};
+
+
+//=============================================================================
+// ** Log watcher's - Tint Screen
+//=============================================================================
+
+// Store the original startTint function
+var _Game_Screen_startTint = Game_Screen.prototype.startTint;
+
+// Store the current screen tint
+var _currentTint = null;
+
+Game_Screen.prototype.startTint = function(tone, duration) {
+    // Disable waiting log temporarily
+    var tmpEnableWaitingLog = EnableWaitingLog;
+    EnableWaitingLog = false;
+
+    // Call the original startTint function
+    _Game_Screen_startTint.call(this, tone, );
+
+    // Enable waiting log again
+    EnableWaitingLog = tmpEnableWaitingLog;
+
+    // Predefined tones
+    var predefinedTones = {
+        "Normal": [0, 0, 0, 0],
+        "Dark": [-68, -68, -68, 0],
+        "Sunset": [68, -34, -34, 0],
+        "Night": [-68, -68, 0, 68],
+        "Sepia": [34, -34, -68, 170],
+    };
+    
+    // Check if the tone matches any of the predefined tones
+    var toneName = null;
+    for (var predefinedToneName in predefinedTones) {
+        if (predefinedTones.hasOwnProperty(predefinedToneName)) {
+            if (predefinedTones[predefinedToneName].toString() === tone.toString()) {
+                toneName = predefinedToneName;
+                break;
+            }
+        }
+    }
+    
+    // If the tone doesn't match any of the predefined ones, use the color codes
+    if (toneName === null) {
+        toneName =  "[" + tone.join(", ") + "]";
+    }
+
+    // Only log the event if the tint has changed
+    if (_currentTint !== toneName) {
+        _currentTint = toneName;
+    
+        // Check if the scene is an instance of Scene_Map and if the DebugLogWindow exists
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var currentTime = getCurrentTime();
+            var logText = currentTime + " [TINT SCREEN] ";
+            logText += "Tone: " + toneName;
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+};
+
+
+
+//=============================================================================
+// ** Log watcher's - Play BGM
+//=============================================================================
+
+// Store the original command241 function
+var _Game_Interpreter_command241 = Game_Interpreter.prototype.command241;
+
+// Store the currently playing BGM
+var _currentBGM = null;
+
+Game_Interpreter.prototype.command241 = function() {
+    // Call the original command241 function
+    _Game_Interpreter_command241.call(this);
+
+    // Only log the event if the BGM has changed
+    if (_currentBGM !== this._params[0].name) {
+        _currentBGM = this._params[0].name;
+    
+        // Check if the scene is an instance of Scene_Map and if the DebugLogWindow exists
+        var scene = SceneManager._scene;
+        if (scene instanceof Scene_Map && scene._debugLogWindow) {
+            var currentTime = getCurrentTime();
+            var bgm = $gameSystem.bgmVolume;
+            var logText = currentTime + " [PLAY BGM] ";
+            logText += this._params[0].name + ", Volume: " + this._params[0].volume;
+            scene._debugLogWindow.addLine(logText);
+        }
+    }
+    
+    // Continue
+    return true;
+};
+
 
 //=============================================================================
 // ** Log watcher's - Teleport log  
@@ -2586,7 +2853,7 @@ Game_Temp.prototype.reserveCommonEvent = function(commonEventId) {
 //=============================================================================
 
     function getCurrentTime(){
-        var time = Math.floor(Graphics.frameCount / 60); // Játékidő másodpercben
+        var time = Math.floor(Graphics.frameCount / 60); // gametime with sec
         var hours = Math.floor(time / 3600);
         var minutes = Math.floor((time % 3600) / 60);
         var seconds = time % 60;
@@ -2710,9 +2977,9 @@ Window_PluginList.prototype = Object.create(Window_Base.prototype);
 Window_PluginList.prototype.constructor = Window_PluginList;
 
 Window_PluginList.prototype.initialize = function(x, y) {
-    var width = Graphics.boxWidth / 3;  // Szélesség növelése
+    var width = Graphics.boxWidth / 4;  
     var height = Graphics.boxHeight / 2;
-    Window_Base.prototype.initialize.call(this, x + 10, y, width, height);  // Távolság a bal széltől
+    Window_Base.prototype.initialize.call(this, x + 10, y, width, height);  
     this._data = [];
     this._scrollY = 0;
     this.createArrows();
@@ -2742,7 +3009,7 @@ Window_PluginList.prototype.createArrows = function() {
 
 Window_PluginList.prototype.refresh = function() {
     this.contents.clear();
-    this.contents.fontSize = 16;  // Betűméret csökkentése
+    this.contents.fontSize = 16;  
     this._data = $plugins.filter(function(plugin) {
         return plugin.status;
     }).map(function(plugin) {
@@ -2751,7 +3018,7 @@ Window_PluginList.prototype.refresh = function() {
         return plugin.name + " " + version;
     });
     for (var i = 0; i < this._data.length; i++) {
-        this.drawText(this._data[i], 0, i * this.lineHeight() - this._scrollY, this.contentsWidth(), 'left');
+        this.drawText(this._data[i], 0, i * this.lineHeight() - this._scrollY - 2, this.contentsWidth(), 'left');
     }
 };
 
@@ -2824,7 +3091,7 @@ Window_PluginListHeader.prototype = Object.create(Window_Base.prototype);
 Window_PluginListHeader.prototype.constructor = Window_PluginListHeader;
 
 Window_PluginListHeader.prototype.initialize = function(x, y) {
-    var width = Graphics.boxWidth / 3;  
+    var width = Graphics.boxWidth / 4;  
     var height = this.fittingHeight(1);
     Window_Base.prototype.initialize.call(this, x + 10, y, width, height);  
     this.refresh();
@@ -2833,12 +3100,33 @@ Window_PluginListHeader.prototype.initialize = function(x, y) {
 
 Window_PluginListHeader.prototype.refresh = function() {
     this.contents.clear();
-    this.contents.fontSize = 16;  // Betűméret csökkentése
+    this.contents.fontSize = 16; 
     var pluginCount = $plugins.filter(function(plugin) {
-        return plugin.status;
+        return plugin.status && !plugin.name.startsWith("----");
     }).length;
     this.drawText("Activated Plugins (" + pluginCount + ")", 0, 0, this.contentsWidth(), 'center');
 };
+
+
+
+
+//=============================================================================
+// ** Control Timer
+//=============================================================================
+
+
+// Store the original update function
+var _Sprite_Timer_update = Sprite_Timer.prototype.update;
+
+Sprite_Timer.prototype.update = function() {
+    _Sprite_Timer_update.call(this);
+    // Check if the reposition option is enabled
+    if (ReposControlTimer) {
+        this.x = Graphics.width / 2;
+        this.y = 10;
+    }
+};
+
 
 
 })(INDIE.Debugger);
