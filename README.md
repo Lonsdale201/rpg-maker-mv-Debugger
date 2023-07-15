@@ -32,9 +32,9 @@ In the second group you can add player (leader) info e.g.: (these are also updat
 
 **Event action Track list:**
 
-* Switcher state
+* Switcher state (both single and range supported)
 * Self Switch State
-* Variables changes
+* Variables changes (both single + range) Current value calc print too
 * Level up / Down (both manual, and automatically)
 * Item gain / Remove
 * Money gain / remove
@@ -51,6 +51,9 @@ In the second group you can add player (leader) info e.g.: (these are also updat
 * Change XP (by event)
 * Items used in the menu (multiple support)
 * Region Movement (entered / left)
+* Tint Screen
+* Play BGM
+* Control timer (stopped / expired / rem time)
 * Yanfly Region Events
 * Yanfly Quest Journey
 
@@ -128,6 +131,18 @@ Currently, information can be printed from a parallel event. But if it is spamme
 
 
 ### Changelog
+
+0.19.5
+
+* Plugin list window resized
+* Pluginlist header no longer count the separator plugins.
+* NEW Tint Screen log (Support predefined versions too)
+* NEW Play BGM log
+* NEW Full Control timer logs
+* Reposition the countdown timer (param)
+* New Range switcher now can log also
+* New Range Variable now can log also
+* Single variable log now will calculates the current value and will print also
 
 0.19.0
 
