@@ -5,7 +5,7 @@ Useful debugging plug-in for the RPG MAKER MV
 **For future plugin compatibility, it is recommended to place the debugger on top of the plugin manager!**
 
 > **Note**
-> Note that windows and information require space. The best setting is 1366*768 resolution.
+> that windows and information require space. The best setting is 1366*768 resolution.
 
 With this add-on, you can monitor real-time event feedback while testing the game. It supports a wide range of event actions, and you have the possibility to use precise (start/end) hierarchical logging (only possible with manual script embedding, and no way to use this for Paralell and Autorun events yet!)
 
